@@ -1,0 +1,50 @@
+name: Deploy FIN.AI → O2Switch
+
+on:
+  push:
+    branches:
+      - main   # Se déclenche à chaque push sur main
+
+jobs:
+  deploy:
+    name: Déploiement sur O2Switch
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Récupérer le code
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      # 2. Se connecter au serveur O2Switch via SSH et déployer
+      - name: Déployer sur O2Switch
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+
+            echo "==> Aller dans le répertoire du projet"
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            echo "==> Récupérer la dernière version du code"
+            git pull origin main
+
+            echo "==> Activer l'environnement virtuel"
+            source venv/bin/activate
+
+            echo "==> Installer / mettre à jour les dépendances"
+            pip install -r requirements.txt --quiet
+
+            echo "==> Appliquer les migrations"
+            python manage.py migrate --noinput
+
+            echo "==> Collecter les fichiers statiques"
+            python manage.py collectstatic --noinput
+
+            echo "==> Redémarrer l'application (Passenger)"
+            mkdir -p tmp && touch tmp/restart.txt
+
+            echo "✓ Déploiement terminé avec succès"
