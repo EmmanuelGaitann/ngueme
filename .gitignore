@@ -4,6 +4,9 @@
 # Claude Code
 .claude/
 
+# O2Switch gère ce fichier — ne pas écraser
+passenger_wsgi.py
+
 # Python
 __pycache__/
 *.py[cod]
