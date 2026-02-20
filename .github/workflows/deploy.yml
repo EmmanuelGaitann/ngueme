@@ -30,7 +30,10 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
 
             echo "==> Récupérer la dernière version du code"
-            git pull origin main
+            cp passenger_wsgi.py /tmp/passenger_wsgi.backup.py 2>/dev/null || true
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/passenger_wsgi.backup.py passenger_wsgi.py 2>/dev/null || true
 
             echo "==> Activer l'environnement virtuel"
             source /home/sc1koga4651/virtualenv/ngueme.ravisa.org/3.11/bin/activate
