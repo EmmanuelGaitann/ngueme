@@ -15,7 +15,9 @@ SECRET_KEY = os.environ['SECRET_KEY']  # Doit être défini en variable d'enviro
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
-# HTTPS
+# HTTPS — O2Switch termine SSL au niveau Apache (reverse proxy)
+# Ce header indique à Django que la requête est bien HTTPS
+SECURE_PROXY_SSL_HEADER        = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT            = True
 SECURE_HSTS_SECONDS            = 31536000  # 1 an
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
