@@ -1,0 +1,122 @@
+{% extends 'base_desktop.html' %}
+{% load static %}
+
+{% block title %}Analyse{% endblock %}
+{% block page_title %}Diagnostic Financier{% endblock %}
+
+{% block content %}
+<!-- ── Filtre plage de dates ── -->
+<div class="card" style="margin-bottom:16px;border-top:3px solid var(--indigo);">
+  <form method="get" style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;">
+    <div>
+      <label class="field-label">DU</label>
+      <input class="fin-input" type="date" name="date_from" value="{{ date_from }}" style="width:150px;">
+    </div>
+    <div>
+      <label class="field-label">AU</label>
+      <input class="fin-input" type="date" name="date_to" value="{{ date_to }}" style="width:150px;">
+    </div>
+    <button type="submit" class="btn-primary" style="background:var(--indigo);height:40px;padding:0 18px;">
+      <i class="fa-solid fa-magnifying-glass" style="margin-right:6px;"></i>Analyser
+    </button>
+    <a href="{% url 'transactions:export_csv' %}?date_from={{ date_from }}&date_to={{ date_to }}"
+       style="height:40px;padding:0 14px;border-radius:10px;background:var(--forest-l);color:var(--forest);
+       display:flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;font-weight:700;">
+      <i class="fa-solid fa-file-csv"></i> Export CSV
+    </a>
+  </form>
+</div>
+
+<!-- ── KPIs ── -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+  <div class="card" style="text-align:center;padding:16px;">
+    <p class="label-xs" style="margin-bottom:4px;">REVENUS</p>
+    <p class="serif" style="font-size:22px;font-weight:700;color:var(--forest);">{{ stats.incomes|floatformat:0 }}</p>
+    <p style="font-size:11px;color:var(--ink3);">FCFA</p>
+  </div>
+  <div class="card" style="text-align:center;padding:16px;">
+    <p class="label-xs" style="margin-bottom:4px;">DÉPENSES</p>
+    <p class="serif" style="font-size:22px;font-weight:700;color:var(--danger);">{{ stats.expenses|floatformat:0 }}</p>
+    <p style="font-size:11px;color:var(--ink3);">FCFA</p>
+  </div>
+  <div class="card" style="text-align:center;padding:16px;">
+    <p class="label-xs" style="margin-bottom:4px;">SOLDE NET</p>
+    <p class="serif" style="font-size:22px;font-weight:700;
+      color:{% if stats.net >= 0 %}var(--forest){% else %}var(--danger){% endif %};">
+      {% if stats.net >= 0 %}+{% endif %}{{ stats.net|floatformat:0 }}
+    </p>
+    <p style="font-size:11px;color:var(--ink3);">FCFA</p>
+  </div>
+  <div class="card" style="text-align:center;padding:16px;">
+    <p class="label-xs" style="margin-bottom:4px;">BURN RATE</p>
+    <p class="serif" style="font-size:22px;font-weight:700;
+      color:{% if stats.burn_rate > 80 %}var(--danger){% elif stats.burn_rate > 60 %}var(--amber){% else %}var(--forest){% endif %};">
+      {{ stats.burn_rate }} %
+    </p>
+    <p style="font-size:11px;color:var(--ink3);">{{ stats.days }} jours · {{ stats.tx_count }} opérations</p>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;">
+
+  <!-- ── Graphique revenus/dépenses ── -->
+  <div class="card">
+    <div class="card-header">
+      <p class="card-title"><i class="fa-solid fa-chart-bar" style="color:var(--indigo);margin-right:6px;"></i>Évolution sur la période</p>
+    </div>
+    <div class="chart-box" style="height:200px;margin-top:14px;">
+      <canvas id="c-rvdep"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Dépenses par catégorie ── -->
+  <div class="card">
+    <div class="card-header">
+      <p class="card-title"><i class="fa-solid fa-chart-pie" style="color:var(--sienna);margin-right:6px;"></i>Par catégorie</p>
+    </div>
+    <div class="chart-box" style="height:200px;margin-top:14px;">
+      <canvas id="c-cat"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Liste transactions ── -->
+<div class="card" style="margin-top:16px;">
+  <div class="card-header" style="margin-bottom:12px;">
+    <p class="card-title">Opérations de la période ({{ transactions|length }})</p>
+  </div>
+  {% for tx in transactions %}
+  <div class="tx-row" data-type="{{ tx.type }}">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="tx-icon {{ tx.category.color_class|default:'ci-divers' }}">
+        <i class="fa-solid {{ tx.category.icon|default:'fa-circle-dot' }}" style="font-size:13px;"></i>
+      </div>
+      <div>
+        <p style="font-size:13px;font-weight:600;">{{ tx.description }}</p>
+        <p style="font-size:11px;color:var(--ink3);margin-top:2px;">
+          {{ tx.date|date:"d/m/Y" }} · {{ tx.category.name|default:"Divers" }}
+        </p>
+      </div>
+    </div>
+    <p style="font-size:14px;font-weight:700;white-space:nowrap;
+      color:{% if tx.is_expense %}var(--danger){% else %}var(--forest){% endif %};">
+      {% if tx.is_expense %}−{% else %}+{% endif %}{{ tx.amount|floatformat:0 }} F
+    </p>
+  </div>
+  {% empty %}
+  <div style="text-align:center;padding:40px;color:var(--ink3);">
+    <i class="fa-solid fa-receipt" style="font-size:32px;opacity:.3;display:block;margin-bottom:12px;"></i>
+    <p style="font-size:14px;">Aucune opération sur cette période</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const SERIES   = {{ series_json|safe }};
+const CAT_DATA = {{ cat_data|safe }};
+initAnalyseCharts(SERIES, CAT_DATA);
+</script>
+{% endblock %}

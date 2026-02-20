@@ -1,0 +1,130 @@
+{% extends 'base_pwa.html' %}
+{% load static %}
+
+{% block title %}FIN.AI{% endblock %}
+
+{% block content %}
+<!-- Hero solde -->
+<div class="pwa-hero">
+  <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,.08);border-radius:50%;pointer-events:none;"></div>
+  <p style="font-size:11px;opacity:.55;letter-spacing:.09em;font-weight:700;margin-bottom:4px;">SOLDE NET DU MOIS</p>
+  <p class="serif" style="font-size:34px;font-weight:700;line-height:1.1;margin-bottom:14px;">
+    {{ stats.net|floatformat:0 }} <span style="font-size:16px;opacity:.5;font-weight:400;">FCFA</span>
+  </p>
+  <div style="display:flex;gap:0;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);">
+    <div style="flex:1;">
+      <p style="font-size:9px;opacity:.5;letter-spacing:.07em;font-weight:700;margin-bottom:2px;">REVENUS</p>
+      <p style="font-size:14px;font-weight:700;">{{ stats.incomes|floatformat:0 }} F</p>
+    </div>
+    <div style="width:1px;background:rgba(255,255,255,.2);margin:0 10px;"></div>
+    <div style="flex:1;">
+      <p style="font-size:9px;opacity:.5;letter-spacing:.07em;font-weight:700;margin-bottom:2px;">DÉPENSES</p>
+      <p style="font-size:14px;font-weight:700;">{{ stats.expenses|floatformat:0 }} F</p>
+    </div>
+    <div style="width:1px;background:rgba(255,255,255,.2);margin:0 10px;"></div>
+    <div style="flex:1;text-align:right;">
+      <p style="font-size:9px;opacity:.5;letter-spacing:.07em;font-weight:700;margin-bottom:2px;">BURN</p>
+      <p style="font-size:14px;font-weight:700;">{{ stats.burn_rate }}%</p>
+    </div>
+  </div>
+</div>
+
+<!-- Score + Investissement -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+  <div class="card">
+    <p style="font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.05em;margin-bottom:8px;">SCORE</p>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="position:relative;width:56px;height:56px;flex-shrink:0;">
+        <svg width="56" height="56" viewBox="0 0 56 56" style="transform:rotate(-90deg);">
+          <circle cx="28" cy="28" r="23" fill="none" stroke="var(--s2)" stroke-width="5"/>
+          <circle cx="28" cy="28" r="23" fill="none" stroke="var(--forest)" stroke-width="5"
+            stroke-dasharray="144" stroke-dashoffset="36" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <p class="serif" style="font-size:16px;font-weight:700;color:var(--forest);line-height:1;">{{ score.total }}</p>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:11px;font-weight:700;">{{ score.income_grade }}</p>
+        <p style="font-size:10px;color:var(--ink3);">Revenus</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p style="font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.05em;margin-bottom:8px;">CAPACITÉ</p>
+    <p class="serif" style="font-size:16px;font-weight:700;color:var(--forest);">{{ stats.invest_capacity|floatformat:0 }}</p>
+    <p style="font-size:10px;color:var(--ink3);">FCFA disponibles</p>
+    <span class="chip chip-green" style="margin-top:6px;font-size:10px;">BVMAC ready</span>
+  </div>
+</div>
+
+<!-- Fuites -->
+{% if leaks %}
+<div class="card" style="margin-bottom:12px;">
+  <p style="font-size:13px;font-weight:700;margin-bottom:12px;">
+    <i class="fa-solid fa-faucet-drip" style="color:var(--sienna);margin-right:7px;"></i>Fuites détectées
+  </p>
+  {% for leak in leaks %}
+  <div class="tx-row">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div class="tx-icon {{ leak.color }}"><i class="fa-solid {{ leak.icon }}" style="font-size:12px;"></i></div>
+      <p style="font-size:13px;font-weight:500;">{{ leak.category }}</p>
+    </div>
+    <p style="font-size:13px;font-weight:700;color:var(--danger);">−{{ leak.amount|floatformat:0 }} F</p>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Accès rapides -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+  <a href="{% url 'transactions:journal' %}" style="text-decoration:none;">
+    <div class="card" style="text-align:center;padding:16px;">
+      <i class="fa-solid fa-receipt" style="font-size:22px;color:var(--sienna);margin-bottom:8px;display:block;"></i>
+      <p style="font-size:12px;font-weight:700;">Journal</p>
+      <p style="font-size:10px;color:var(--ink3);">Ajouter une opération</p>
+    </div>
+  </a>
+  <a href="{% url 'ai_advisor:home' %}" style="text-decoration:none;">
+    <div class="card" style="text-align:center;padding:16px;">
+      <i class="fa-solid fa-brain" style="font-size:22px;color:var(--indigo);margin-bottom:8px;display:block;"></i>
+      <p style="font-size:12px;font-weight:700;">Assistant IA</p>
+      <p style="font-size:10px;color:var(--ink3);">Conseil personnalisé</p>
+    </div>
+  </a>
+</div>
+
+<!-- Graphique 6 mois -->
+<div class="card">
+  <p style="font-size:13px;font-weight:700;margin-bottom:12px;">Évolution 6 mois</p>
+  <div style="height:150px;"><canvas id="c-mobile"></canvas></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const SERIES = {{ series_json|safe }};
+const labels  = SERIES.map(s => s.label);
+const incomes = SERIES.map(s => s.income);
+const exps    = SERIES.map(s => s.expense);
+new Chart(document.getElementById('c-mobile'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      { label: 'Revenus',  data: incomes, borderColor: '#1e6b48', backgroundColor: 'rgba(30,107,72,.08)', fill: true, tension: .4, pointRadius: 3 },
+      { label: 'Dépenses', data: exps,    borderColor: '#c03030', backgroundColor: 'rgba(192,48,48,.05)',  fill: true, tension: .4, pointRadius: 3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, labels: { color: '#94a3c0', font: { family: 'Plus Jakarta Sans', size: 10 }, boxWidth: 10, padding: 8 } } },
+    scales: {
+      x: { ticks: { color: '#94a3c0', font: { size: 10 } }, grid: { display: false } },
+      y: { ticks: { color: '#94a3c0', font: { size: 10 } }, grid: { color: 'rgba(228,234,244,.6)' } }
+    }
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>{% block title %}FIN.AI{% endblock %} — CFO Autonome</title>
+<!-- Détection taille d'écran : met à jour le cookie finai_view -->
+<script>
+(function(){
+  var w = window.innerWidth || document.documentElement.clientWidth;
+  var isMobile = w <= 768;
+  var expires = '; max-age=604800; path=/; SameSite=Lax';
+  var current = (document.cookie.match(/finai_view=([^;]+)/) || [])[1];
+  document.cookie = 'finai_view=' + (isMobile ? 'mobile' : 'desktop') + expires;
+  /* Recharge le dashboard uniquement (seule page avec 2 templates) */
+  if (isMobile && current !== 'mobile') {
+    var p = location.pathname;
+    if (p === '/dashboard/' || p === '/') { window.location.reload(); }
+  }
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/finai.css' %}">
+<link rel="manifest" href="{% static 'manifest.json' %}">
+<meta name="theme-color" content="#0f1c3f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <i class="fa-solid fa-seedling"></i>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="{% url 'dashboard:home' %}"       class="nav-icon {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}" title="Tableau de bord">
+        <i class="fa-solid fa-house"></i>
+      </a>
+      <a href="{% url 'transactions:journal' %}" class="nav-icon {% if request.resolver_match.url_name == 'journal' %}active{% endif %}" title="Journal">
+        <i class="fa-solid fa-receipt"></i>
+      </a>
+      <a href="{% url 'transactions:budgets' %}" class="nav-icon {% if request.resolver_match.url_name == 'budgets' %}active{% endif %}" title="Budgets" style="position:relative;">
+        <i class="fa-solid fa-gauge-high"></i>
+        {% if alert_count %}<span style="position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid var(--ink);"></span>{% endif %}
+      </a>
+      <a href="{% url 'transactions:analyse' %}" class="nav-icon {% if request.resolver_match.url_name == 'analyse' %}active{% endif %}" title="Diagnostic">
+        <i class="fa-solid fa-chart-line"></i>
+      </a>
+      <a href="{% url 'transactions:patrimoine' %}" class="nav-icon {% if request.resolver_match.url_name == 'patrimoine' %}active{% endif %}" title="Patrimoine">
+        <i class="fa-solid fa-scale-balanced"></i>
+      </a>
+      <a href="{% url 'dashboard:simulateur' %}" class="nav-icon {% if request.resolver_match.url_name == 'simulateur' %}active{% endif %}" title="Simulateur">
+        <i class="fa-solid fa-rocket"></i>
+      </a>
+      <a href="{% url 'ai_advisor:home' %}" class="nav-icon {% if request.resolver_match.app_name == 'ai_advisor' %}active{% endif %}" title="Assistant IA">
+        <i class="fa-solid fa-brain"></i>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a href="{% url 'accounts:profile' %}" class="nav-icon" title="Profil">
+        <i class="fa-solid fa-user"></i>
+      </a>
+      <a href="{% url 'accounts:logout' %}"  class="nav-icon" title="Déconnexion">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div>
+          <p class="serif topbar-title">{% block page_title %}Tableau de bord{% endblock %}</p>
+          <p class="topbar-sub">{{ "now"|date:"F Y" }}</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          <span>EN DIRECT</span>
+        </div>
+        <button class="icon-btn" id="notif-btn" title="Activer les notifications" onclick="requestPushPermission()" style="position:relative;">
+          <i class="fa-regular fa-bell" id="notif-icon"></i>
+        </button>
+        <div class="avatar-chip">{{ user.get_initials }}</div>
+      </div>
+    </header>
+
+    <!-- MESSAGES DJANGO -->
+    {% if messages %}
+    <div style="padding:0 24px;">
+      {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }}" style="margin-bottom:8px;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;
+        background:{% if 'success' in msg.tags %}var(--forest-l){% elif 'error' in msg.tags %}var(--danger-l){% else %}var(--indigo-l){% endif %};
+        color:{% if 'success' in msg.tags %}var(--forest){% elif 'error' in msg.tags %}var(--danger){% else %}var(--indigo){% endif %};">
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- CONTENT -->
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+</div>
+
+<!-- NAV MOBILE (cachée sur desktop, visible ≤768px via CSS) -->
+<nav class="mobile-bottom-nav">
+  <a href="{% url 'dashboard:home' %}" class="mobile-nav-btn {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+    <i class="fa-solid fa-house"></i><span>Tableau</span>
+  </a>
+  <a href="{% url 'transactions:journal' %}" class="mobile-nav-btn {% if request.resolver_match.url_name == 'journal' %}active{% endif %}">
+    <i class="fa-solid fa-receipt"></i><span>Journal</span>
+  </a>
+  <a href="{% url 'transactions:budgets' %}" class="mobile-nav-btn {% if request.resolver_match.url_name == 'budgets' %}active{% endif %}" style="position:relative;">
+    <i class="fa-solid fa-gauge-high"></i>
+    {% if alert_count %}<span style="position:absolute;top:5px;right:calc(50% - 18px);width:7px;height:7px;border-radius:50%;background:var(--danger);"></span>{% endif %}
+    <span>Budgets</span>
+  </a>
+  <a href="{% url 'ai_advisor:home' %}" class="mobile-nav-btn {% if request.resolver_match.app_name == 'ai_advisor' %}active{% endif %}">
+    <i class="fa-solid fa-brain"></i><span>IA</span>
+  </a>
+  <a href="{% url 'accounts:profile' %}" class="mobile-nav-btn">
+    <i class="fa-solid fa-user"></i><span>Profil</span>
+  </a>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <i class="fa-solid fa-circle-check" style="color:#6ee09a;"></i>
+  <span id="toast-msg">OK</span>
+</div>
+
+<script src="{% static 'js/finai.js' %}"></script>
+{% block extra_js %}{% endblock %}
+<!-- Push Notifications -->
+<script>
+const VAPID_PUBLIC_KEY   = '{{ vapid_public_key }}';
+const PUSH_SUBSCRIBE_URL = "{% url 'transactions:push_subscribe' %}";
+const PUSH_CHECK_URL     = "{% url 'transactions:push_check' %}";
+if (VAPID_PUBLIC_KEY) initPushNotifications(VAPID_PUBLIC_KEY, PUSH_SUBSCRIBE_URL, PUSH_CHECK_URL);
+</script>
+</body>
+</html>

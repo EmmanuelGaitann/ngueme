@@ -1,0 +1,185 @@
+{% extends 'base_desktop.html' %}
+{% block title %}Assistant IA{% endblock %}
+{% block page_title %}Assistant CFO — IA{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 360px;gap:16px;height:calc(100vh - 110px);">
+
+  <!-- Colonne gauche -->
+  <div style="display:flex;flex-direction:column;gap:16px;overflow-y:auto;">
+
+    <!-- Rapport IA hebdomadaire -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:38px;height:38px;background:linear-gradient(135deg,var(--indigo),var(--forest));border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-brain" style="color:#fff;font-size:15px;"></i>
+          </div>
+          <div>
+            <p style="font-size:14px;font-weight:700;">Rapport hebdomadaire</p>
+            <p style="font-size:11px;color:var(--ink3);">Généré par IA · Semaine en cours</p>
+          </div>
+        </div>
+        <button onclick="refreshReport()" class="link-accent" style="font-size:12px;">
+          <i class="fa-solid fa-rotate-right" style="margin-right:4px;"></i>Régénérer
+        </button>
+      </div>
+      <div style="background:linear-gradient(135deg,#0f1c3f,#1e3068);border-radius:14px;padding:18px;color:#fff;">
+        <p style="font-size:10px;opacity:.5;letter-spacing:.07em;font-weight:700;margin-bottom:8px;">ANALYSE IA · SEMAINE EN COURS</p>
+        <p style="font-size:13px;line-height:1.8;opacity:.9;" id="ai-report-text">{{ report }}</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;">
+        <div style="background:var(--forest-l);border-radius:12px;padding:14px;">
+          <i class="fa-solid fa-circle-check" style="color:var(--forest);font-size:18px;margin-bottom:8px;display:block;"></i>
+          <p style="font-size:12px;font-weight:700;color:var(--forest);">Budget respecté</p>
+          <p style="font-size:11px;color:var(--ink3);margin-top:3px;">Burn rate {{ global_stats.burn_rate }}%</p>
+        </div>
+        <div style="background:var(--amber-l);border-radius:12px;padding:14px;">
+          <i class="fa-solid fa-faucet-drip" style="color:var(--amber);font-size:18px;margin-bottom:8px;display:block;"></i>
+          <p style="font-size:12px;font-weight:700;color:var(--amber);">Fuites détectées</p>
+          <p style="font-size:11px;color:var(--ink3);margin-top:3px;">Analysez le journal</p>
+        </div>
+        <div style="background:var(--indigo-l);border-radius:12px;padding:14px;">
+          <i class="fa-solid fa-rocket" style="color:var(--indigo);font-size:18px;margin-bottom:8px;display:block;"></i>
+          <p style="font-size:12px;font-weight:700;color:var(--indigo);">Opportunité</p>
+          <p style="font-size:11px;color:var(--ink3);margin-top:3px;">BVMAC mars 2026</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prédictions -->
+    <div class="card">
+      <p style="font-size:13px;font-weight:700;margin-bottom:14px;">
+        <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--indigo);margin-right:7px;"></i>
+        Prédictions — 30 prochains jours
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;">
+          <p class="label-xs" style="margin-bottom:6px;">SOLDE PRÉDIT</p>
+          <p class="serif" style="font-size:20px;font-weight:700;">{{ predictions.predicted_balance|floatformat:0 }} F</p>
+          <p style="font-size:11px;color:var(--forest);margin-top:3px;font-weight:600;">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            +{{ predictions.balance_change|default:0|floatformat:0 }} F
+          </p>
+        </div>
+        <div style="border:1.5px solid var(--amber);border-radius:12px;padding:14px;background:var(--amber-l);">
+          <p class="label-xs" style="color:var(--amber);margin-bottom:6px;">RISQUE BUDGET</p>
+          <p class="serif" style="font-size:20px;font-weight:700;color:var(--amber);">{{ predictions.risk_level }}</p>
+          <p style="font-size:11px;color:var(--ink3);margin-top:3px;">{{ predictions.risk_detail }}</p>
+        </div>
+        <div style="border:1.5px solid var(--indigo);border-radius:12px;padding:14px;background:var(--indigo-l);">
+          <p class="label-xs" style="color:var(--indigo);margin-bottom:6px;">MEILLEUR MOMENT</p>
+          <p class="serif" style="font-size:18px;font-weight:700;color:var(--indigo);">{{ predictions.best_invest_date }}</p>
+          <p style="font-size:11px;color:var(--ink3);margin-top:3px;">{{ predictions.best_invest_reason }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat IA -->
+  <div class="card" style="display:flex;flex-direction:column;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--s2);">
+      <div style="width:34px;height:34px;background:linear-gradient(135deg,var(--indigo),var(--forest));border-radius:9px;display:flex;align-items:center;justify-content:center;">
+        <i class="fa-solid fa-robot" style="color:#fff;font-size:14px;"></i>
+      </div>
+      <div>
+        <p style="font-size:13px;font-weight:700;">Conseiller IA</p>
+        <p style="font-size:11px;color:var(--ink3);">Posez n'importe quelle question financière</p>
+      </div>
+      <span class="chip chip-indigo" style="margin-left:auto;">
+        <i class="fa-solid fa-circle" style="font-size:7px;{% if not has_api_key %}color:var(--amber);{% endif %}"></i>
+        {% if has_api_key %}Actif{% else %}Config. requise{% endif %}
+      </span>
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">
+      <div style="background:var(--s2);border-radius:12px 12px 12px 4px;padding:12px;max-width:90%;">
+        <p style="font-size:12px;color:var(--ink2);line-height:1.65;">
+          Bonjour {{ user.first_name }} ! Je suis votre CFO autonome. Posez-moi une question — je peux analyser vos dépenses, simuler un investissement, expliquer votre score ou identifier vos opportunités BVMAC.
+        </p>
+      </div>
+      {% for msg in history %}
+      <div style="{% if msg.role == 'user' %}background:var(--indigo);color:#fff;border-radius:12px 12px 4px 12px;align-self:flex-end;margin-left:10%;{% else %}background:var(--s2);border-radius:12px 12px 12px 4px;max-width:90%;{% endif %}padding:10px 14px;">
+        <p style="font-size:12px;line-height:1.65;">{{ msg.content }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Input -->
+    <div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--s2);">
+      <input class="fin-input" type="text" id="chat-input"
+        placeholder="Ex: Pourquoi mon score est 75 ?"
+        onkeydown="if(event.key==='Enter')sendChat()"
+        style="flex:1;">
+      <button onclick="sendChat()" style="width:38px;height:38px;background:var(--indigo);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:14px;flex-shrink:0;">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CHAT_URL    = "{% url 'ai_advisor:chat' %}";
+const REFRESH_URL = "{% url 'ai_advisor:refresh_report' %}";
+const CSRF_TOKEN  = "{{ csrf_token }}";
+
+function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  addBubble(msg, 'user');
+  inp.value = '';
+  const loadId = addLoading();
+  fetch(CHAT_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':CSRF_TOKEN},
+    body: JSON.stringify({message: msg})
+  })
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById(loadId).remove();
+    addBubble(d.answer, 'assistant');
+  })
+  .catch(() => {
+    document.getElementById(loadId).remove();
+    addBubble('Erreur de connexion. Vérifiez votre clé API dans .env', 'assistant');
+  });
+}
+
+function addBubble(text, role) {
+  const box = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.style.cssText = role === 'user'
+    ? 'background:var(--indigo);color:#fff;border-radius:12px 12px 4px 12px;align-self:flex-end;margin-left:10%;padding:10px 14px;'
+    : 'background:var(--s2);border-radius:12px 12px 12px 4px;max-width:90%;padding:10px 14px;';
+  div.innerHTML = `<p style="font-size:12px;line-height:1.65;">${text}</p>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function addLoading() {
+  const id = 'load-' + Date.now();
+  const box = document.getElementById('chat-msgs');
+  box.innerHTML += `<div id="${id}" style="background:var(--s2);border-radius:12px;padding:10px 14px;max-width:90%;">
+    <p style="font-size:12px;color:var(--ink3);"><i class="fa-solid fa-circle-notch fa-spin"></i> Analyse en cours…</p>
+  </div>`;
+  box.scrollTop = box.scrollHeight;
+  return id;
+}
+
+function refreshReport() {
+  const el = document.getElementById('ai-report-text');
+  el.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Génération en cours…';
+  fetch(REFRESH_URL, {
+    method: 'GET',
+    headers: {'X-CSRFToken': CSRF_TOKEN}
+  })
+  .then(r => r.json())
+  .then(d => { el.textContent = d.report; });
+}
+</script>
+{% endblock %}

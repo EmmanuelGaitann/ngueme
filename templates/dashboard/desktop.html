@@ -1,0 +1,182 @@
+{% extends 'base_desktop.html' %}
+{% load static %}
+
+{% block title %}Tableau de bord{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="dash-grid">
+
+  <!-- ── HERO solde ── -->
+  <div class="card card-hero dash-hero">
+    <div class="card-hero-bg"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+      <p class="label-xs" style="opacity:.55;">SOLDE NET DU MOIS</p>
+      <span class="chip chip-green"><i class="fa-solid fa-arrow-trend-up" style="font-size:9px;"></i> +12,4 %</span>
+    </div>
+    <p class="serif hero-amount">{{ stats.net|floatformat:0 }} <span class="hero-currency">FCFA</span></p>
+    <div class="hero-sparkline">
+      <canvas id="c-spark"></canvas>
+    </div>
+    <div class="hero-footer">
+      <div class="hero-stat">
+        <p class="label-xs">REVENUS</p>
+        <p class="hero-stat-val">{{ stats.incomes|floatformat:0 }} F</p>
+      </div>
+      <div class="hero-sep"></div>
+      <div class="hero-stat">
+        <p class="label-xs">DÉPENSES</p>
+        <p class="hero-stat-val">{{ stats.expenses|floatformat:0 }} F</p>
+      </div>
+      <div class="hero-sep"></div>
+      <div class="hero-stat">
+        <p class="label-xs">LIBRE</p>
+        <p class="hero-stat-val">{{ stats.free_pct }} %</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCORE ── -->
+  <div class="card dash-score">
+    <div class="card-header">
+      <p class="card-title">Score FIN.AI</p>
+      <span class="chip chip-green"><i class="fa-solid fa-check" style="font-size:9px;"></i> BVMAC</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;margin-top:10px;">
+      <div class="score-arc-wrap">
+        <svg width="90" height="90" viewBox="0 0 90 90" style="transform:rotate(-90deg);">
+          <circle cx="45" cy="45" r="38" fill="none" stroke="var(--s2)" stroke-width="8"/>
+          <circle cx="45" cy="45" r="38" fill="none" stroke="var(--forest)" stroke-width="8"
+            stroke-dasharray="239" stroke-dashoffset="{{ score_offset }}" stroke-linecap="round"/>
+        </svg>
+        <div class="score-center">
+          <p class="serif score-num" style="color:var(--forest);">{{ score.total }}</p>
+          <p class="score-denom">/100</p>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <p class="serif" style="font-size:14px;font-weight:700;margin-bottom:10px;">
+          {% if score.total >= 75 %}Investisseur potentiel{% elif score.total >= 50 %}En progression{% else %}À consolider{% endif %}
+        </p>
+        <div class="grade-row"><span class="grade-label">Revenus</span><span class="grade grade-green">{{ score.income_grade }}</span></div>
+        <div class="grade-row"><span class="grade-label">Épargne</span><span class="grade grade-amber">{{ score.saving_grade }}</span></div>
+        <div class="grade-row"><span class="grade-label">Dépenses</span><span class="grade grade-red">{{ score.expense_grade }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROFIL + TRANSACTIONS ── -->
+  <div class="card dash-profile">
+    <div class="profile-head">
+      <div class="avatar-lg">{{ user.get_initials }}</div>
+      <p style="font-size:16px;font-weight:700;margin-top:8px;">{{ user.get_full_name }}</p>
+      <p style="font-size:12px;color:var(--ink3);">{{ user.profession|default:"Consultant" }} · {{ user.city }}</p>
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;">
+        <span class="chip chip-green"><i class="fa-solid fa-star" style="font-size:9px;"></i> Score {{ score.total }}</span>
+        <span class="chip chip-indigo"><i class="fa-solid fa-shield-halved" style="font-size:9px;"></i> BVMAC</span>
+      </div>
+    </div>
+    <div class="tx-list-header">
+      <p style="font-size:13px;font-weight:700;">Transactions récentes</p>
+      <a href="{% url 'transactions:journal' %}" class="link-accent">Voir tout <i class="fa-solid fa-arrow-right" style="font-size:9px;"></i></a>
+    </div>
+    <div id="tx-recent">
+      {% for tx in recent_transactions %}
+      {% include 'partials/tx_row.html' with tx=tx %}
+      {% empty %}
+      <p style="font-size:12px;color:var(--ink3);padding:12px 0;text-align:center;">Aucune transaction. <a href="{% url 'transactions:journal' %}" class="link-accent">Ajouter la première</a></p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── REVENUS CHART ── -->
+  <div class="card dash-income">
+    <div class="card-header">
+      <div>
+        <p class="card-title">Revenus</p>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:3px;">
+          <p class="serif" style="font-size:24px;font-weight:700;">{{ stats.incomes|floatformat:0 }}</p>
+          <p style="font-size:12px;color:var(--ink3);">FCFA</p>
+          <span class="chip chip-green"><i class="fa-solid fa-arrow-up" style="font-size:9px;"></i> +8,2 %</span>
+        </div>
+      </div>
+    </div>
+    <div class="chart-box" style="height:90px;margin-top:10px;"><canvas id="c-inc"></canvas></div>
+  </div>
+
+  <!-- ── DÉPENSES CHART ── -->
+  <div class="card dash-expense">
+    <div class="card-header">
+      <div>
+        <p class="card-title">Dépenses</p>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:3px;">
+          <p class="serif" style="font-size:24px;font-weight:700;color:var(--danger);">{{ stats.expenses|floatformat:0 }}</p>
+          <p style="font-size:12px;color:var(--ink3);">FCFA</p>
+          <span class="chip chip-red"><i class="fa-solid fa-arrow-down" style="font-size:9px;"></i> −4,1 %</span>
+        </div>
+      </div>
+    </div>
+    <div class="chart-box" style="height:90px;margin-top:10px;"><canvas id="c-exp"></canvas></div>
+  </div>
+
+  <!-- ── FUITES ── -->
+  <div class="card dash-leaks">
+    <div class="card-header">
+      <p class="card-title"><i class="fa-solid fa-faucet-drip" style="color:var(--sienna);margin-right:6px;"></i>Fuites détectées</p>
+      <span class="chip chip-sienna">{{ leaks|length }} postes</span>
+    </div>
+    {% for leak in leaks %}
+    <div class="tx-row">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="tx-icon {{ leak.color }}"><i class="fa-solid {{ leak.icon }}"></i></div>
+        <div>
+          <p style="font-size:12px;font-weight:600;">{{ leak.category }}</p>
+          <div class="bar-track" style="width:120px;margin-top:4px;">
+            <div class="bar-fill" style="width:{{ leak.pct|default:60 }}%;background:var(--sienna);"></div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12px;font-weight:700;color:var(--danger);">−{{ leak.amount|floatformat:0 }} F</p>
+    </div>
+    {% empty %}
+    <p style="font-size:12px;color:var(--forest);padding:10px 0;"><i class="fa-solid fa-circle-check" style="margin-right:5px;"></i>Aucune fuite détectée ce mois</p>
+    {% endfor %}
+  </div>
+
+  <!-- ── CAPACITÉ ── -->
+  <div class="card dash-capacity">
+    <div class="card-header">
+      <p class="card-title"><i class="fa-solid fa-piggy-bank" style="color:var(--ink3);margin-right:6px;"></i>Capacité d'investissement</p>
+      <p class="serif" style="font-size:16px;font-weight:700;color:var(--forest);">{{ stats.invest_capacity|floatformat:0 }} F</p>
+    </div>
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:4px;font-weight:600;">
+          <span>BVMAC 6%/an</span><span style="color:var(--forest);font-weight:700;">Recommandé</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:70%;background:linear-gradient(90deg,var(--forest),#3a9068);"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:4px;font-weight:600;">
+          <span>Immobilier 10%/an</span><span style="color:var(--forest);font-weight:700;">Moyen terme</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:84%;background:linear-gradient(90deg,#3a9068,#5aaa84);"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:4px;font-weight:600;">
+          <span>Réserve liquidités</span><span style="color:var(--amber);font-weight:700;">Priorité</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:33%;background:linear-gradient(90deg,var(--amber),#e09040);"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /dash-grid -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const SERIES = {{ series_json|safe }};
+initDashCharts(SERIES);
+</script>
+{% endblock %}

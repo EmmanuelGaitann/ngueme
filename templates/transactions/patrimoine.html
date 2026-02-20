@@ -1,0 +1,234 @@
+{% extends 'base_desktop.html' %}
+{% load static %}
+
+{% block title %}Patrimoine{% endblock %}
+{% block page_title %}Suivi du Patrimoine{% endblock %}
+
+{% block content %}
+
+<!-- ── Bilan net ── -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+  <div class="card card-hero" style="border-top:3px solid var(--forest);padding:20px;">
+    <p class="label-xs">TOTAL ACTIFS</p>
+    <p class="serif" style="font-size:26px;font-weight:700;color:var(--forest);margin-top:4px;">
+      {{ summary.actifs|floatformat:0 }}
+    </p>
+    <p style="font-size:12px;color:var(--ink3);">FCFA</p>
+  </div>
+  <div class="card" style="border-top:3px solid var(--danger);padding:20px;">
+    <p class="label-xs">TOTAL PASSIFS</p>
+    <p class="serif" style="font-size:26px;font-weight:700;color:var(--danger);margin-top:4px;">
+      {{ summary.passifs|floatformat:0 }}
+    </p>
+    <p style="font-size:12px;color:var(--ink3);">FCFA</p>
+  </div>
+  <div class="card" style="border-top:3px solid var(--indigo);padding:20px;background:var(--indigo-l);">
+    <p class="label-xs">PATRIMOINE NET</p>
+    <p class="serif" style="font-size:26px;font-weight:700;
+      color:{% if summary.net >= 0 %}var(--indigo){% else %}var(--danger){% endif %};margin-top:4px;">
+      {% if summary.net >= 0 %}+{% endif %}{{ summary.net|floatformat:0 }}
+    </p>
+    <p style="font-size:12px;color:var(--ink3);">FCFA</p>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start;">
+
+  <!-- ── Listes actifs / passifs ── -->
+  <div>
+
+    <!-- ACTIFS -->
+    <div class="card" style="margin-bottom:14px;border-top:3px solid var(--forest);">
+      <div class="card-header" style="margin-bottom:12px;">
+        <p class="card-title"><i class="fa-solid fa-circle-arrow-up" style="color:var(--forest);margin-right:6px;"></i>Actifs</p>
+        <span class="chip chip-green">{{ actifs|length }} éléments</span>
+      </div>
+      {% for e in actifs %}
+      <div class="tx-row">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="tx-icon ci-forest">
+            <i class="fa-solid {% if e.category == 'immobilier' %}fa-house{% elif e.category == 'business' %}fa-briefcase{% elif e.category == 'epargne' %}fa-piggy-bank{% elif e.category == 'investissement' %}fa-chart-line{% elif e.category == 'vehicule' %}fa-car{% else %}fa-circle-dot{% endif %}" style="font-size:13px;"></i>
+          </div>
+          <div>
+            <p style="font-size:13px;font-weight:600;">{{ e.label }}</p>
+            <p style="font-size:11px;color:var(--ink3);">{{ e.get_category_display }} · {{ e.date|date:"d/m/Y" }}</p>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <p style="font-size:14px;font-weight:700;color:var(--forest);">+{{ e.valeur|floatformat:0 }} F</p>
+          <form method="post" action="{% url 'transactions:delete_patrimoine' e.pk %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" onclick="return confirm('Supprimer ?')"
+              style="width:28px;height:28px;border-radius:7px;border:none;background:var(--s2);color:var(--ink3);cursor:pointer;font-size:12px;">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+      {% empty %}
+      <p style="font-size:12px;color:var(--ink3);padding:14px 0;text-align:center;">Aucun actif enregistré</p>
+      {% endfor %}
+    </div>
+
+    <!-- PASSIFS -->
+    <div class="card" style="border-top:3px solid var(--danger);">
+      <div class="card-header" style="margin-bottom:12px;">
+        <p class="card-title"><i class="fa-solid fa-circle-arrow-down" style="color:var(--danger);margin-right:6px;"></i>Passifs / Dettes</p>
+        <span class="chip chip-red">{{ passifs|length }} éléments</span>
+      </div>
+      {% for e in passifs %}
+      <div class="tx-row">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="tx-icon ci-danger">
+            <i class="fa-solid {% if e.category == 'dette' %}fa-hand-holding-dollar{% elif e.category == 'credit' %}fa-credit-card{% else %}fa-circle-dot{% endif %}" style="font-size:13px;"></i>
+          </div>
+          <div>
+            <p style="font-size:13px;font-weight:600;">{{ e.label }}</p>
+            <p style="font-size:11px;color:var(--ink3);">{{ e.get_category_display }} · {{ e.date|date:"d/m/Y" }}</p>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <p style="font-size:14px;font-weight:700;color:var(--danger);">−{{ e.valeur|floatformat:0 }} F</p>
+          <form method="post" action="{% url 'transactions:delete_patrimoine' e.pk %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" onclick="return confirm('Supprimer ?')"
+              style="width:28px;height:28px;border-radius:7px;border:none;background:var(--s2);color:var(--ink3);cursor:pointer;font-size:12px;">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+      {% empty %}
+      <p style="font-size:12px;color:var(--forest);padding:14px 0;text-align:center;">
+        <i class="fa-solid fa-circle-check" style="margin-right:5px;"></i>Aucune dette enregistrée
+      </p>
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <!-- ── Formulaire + Graphiques ── -->
+  <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:20px;">
+
+    <!-- Formulaire ajout -->
+    <div class="card" style="border-top:3px solid var(--sienna);">
+      <p style="font-size:13px;font-weight:700;margin-bottom:14px;">
+        <i class="fa-solid fa-plus-circle" style="color:var(--sienna);margin-right:7px;"></i>Ajouter une entrée
+      </p>
+      <form method="post" action="{% url 'transactions:add_patrimoine' %}">
+        {% csrf_token %}
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <!-- Type actif/passif -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <label style="cursor:pointer;">
+              <input type="radio" name="ptype" value="actif" checked style="display:none;" id="r-actif">
+              <div id="lbl-actif" onclick="selectPtype('actif')"
+                style="padding:10px;border-radius:10px;border:2px solid var(--forest);background:var(--forest-l);
+                text-align:center;font-size:12px;font-weight:700;color:var(--forest);">
+                <i class="fa-solid fa-circle-arrow-up"></i> Actif
+              </div>
+            </label>
+            <label style="cursor:pointer;">
+              <input type="radio" name="ptype" value="passif" style="display:none;" id="r-passif">
+              <div id="lbl-passif" onclick="selectPtype('passif')"
+                style="padding:10px;border-radius:10px;border:2px solid var(--border);
+                text-align:center;font-size:12px;font-weight:700;color:var(--ink3);">
+                <i class="fa-solid fa-circle-arrow-down"></i> Passif
+              </div>
+            </label>
+          </div>
+
+          <div>
+            <label class="field-label">CATÉGORIE</label>
+            <select class="fin-input" name="category" id="cat-select">
+              <optgroup label="Actifs">
+                <option value="immobilier">Immobilier</option>
+                <option value="business">Business / Entreprise</option>
+                <option value="epargne">Épargne / Liquidités</option>
+                <option value="investissement">Investissement (BVMAC)</option>
+                <option value="vehicule">Véhicule</option>
+              </optgroup>
+              <optgroup label="Passifs">
+                <option value="dette">Dette / Emprunt</option>
+                <option value="credit">Crédit</option>
+              </optgroup>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="field-label">LIBELLÉ</label>
+            <input class="fin-input" type="text" name="label" placeholder="Ex: Appartement Bastos, Voiture Toyota…" required>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <label class="field-label">VALEUR (FCFA)</label>
+              <input class="fin-input" type="number" name="valeur" placeholder="5 000 000" min="1" required>
+            </div>
+            <div>
+              <label class="field-label">DATE D'ÉVALUATION</label>
+              <input class="fin-input" type="date" name="date" id="pat-date" required>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-label">NOTES</label>
+            <input class="fin-input" type="text" name="notes" placeholder="Optionnel…">
+          </div>
+
+          <button type="submit" class="btn-primary btn-sienna">
+            <i class="fa-solid fa-plus" style="margin-right:6px;"></i>Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Graphique actifs -->
+    {% if actifs %}
+    <div class="card">
+      <p class="card-title" style="margin-bottom:10px;">Composition des actifs</p>
+      <div class="chart-box" style="height:160px;"><canvas id="c-actifs"></canvas></div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('pat-date').value = new Date().toISOString().split('T')[0];
+
+function selectPtype(val) {
+  document.getElementById('r-actif').checked  = (val === 'actif');
+  document.getElementById('r-passif').checked = (val === 'passif');
+  const la = document.getElementById('lbl-actif');
+  const lp = document.getElementById('lbl-passif');
+  if (val === 'actif') {
+    la.style.borderColor = 'var(--forest)'; la.style.background = 'var(--forest-l)'; la.style.color = 'var(--forest)';
+    lp.style.borderColor = 'var(--border)';  lp.style.background = '';               lp.style.color = 'var(--ink3)';
+  } else {
+    lp.style.borderColor = 'var(--danger)'; lp.style.background = 'var(--danger-l)'; lp.style.color = 'var(--danger)';
+    la.style.borderColor = 'var(--border)';  la.style.background = '';               la.style.color = 'var(--ink3)';
+  }
+}
+
+const CAT_LABELS = {{ cat_labels|safe }};
+const CAT_TOTALS = {{ cat_totals|safe }};
+const cvs = document.getElementById('c-actifs');
+if (cvs && CAT_TOTALS.some(v => v > 0)) {
+  new Chart(cvs, {
+    type: 'doughnut',
+    data: {
+      labels: CAT_LABELS,
+      datasets: [{ data: CAT_TOTALS,
+        backgroundColor: ['#1e6b48','#2d3fa0','#b87020','#0891b2','#c45c2a','#b83060','#7a5c8a'],
+        borderColor: '#fff', borderWidth: 2 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'60%',
+      plugins: { legend: { position:'right', labels:{ color:'#94a3c0', font:{size:10}, boxWidth:10, padding:6 } } } }
+  });
+}
+</script>
+{% endblock %}

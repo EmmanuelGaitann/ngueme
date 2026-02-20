@@ -1,0 +1,44 @@
+{
+  "name": "FIN.AI — CFO Autonome",
+  "short_name": "FIN.AI",
+  "description": "Votre conseiller financier personnel pour l'Afrique Centrale",
+  "start_url": "/dashboard/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f1c3f",
+  "theme_color": "#0f1c3f",
+  "lang": "fr",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Journal",
+      "short_name": "Journal",
+      "description": "Voir mes transactions",
+      "url": "/journal/",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ajouter une transaction",
+      "short_name": "Ajouter",
+      "description": "Enregistrer une nouvelle transaction",
+      "url": "/journal/ajouter/",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "screenshots": []
+}

@@ -1,0 +1,11 @@
+[
+  {"model": "transactions.category", "pk": 1, "fields": {"name": "Logement",       "slug": "logement",       "icon": "fa-house",          "color_class": "ci-logement"}},
+  {"model": "transactions.category", "pk": 2, "fields": {"name": "Alimentation",    "slug": "alimentation",   "icon": "fa-utensils",       "color_class": "ci-alimentation"}},
+  {"model": "transactions.category", "pk": 3, "fields": {"name": "Transport",       "slug": "transport",      "icon": "fa-car-side",       "color_class": "ci-transport"}},
+  {"model": "transactions.category", "pk": 4, "fields": {"name": "Business",        "slug": "business",       "icon": "fa-briefcase",      "color_class": "ci-business"}},
+  {"model": "transactions.category", "pk": 5, "fields": {"name": "Télécom",         "slug": "telecom",        "icon": "fa-mobile-screen",  "color_class": "ci-telecom"}},
+  {"model": "transactions.category", "pk": 6, "fields": {"name": "Santé",           "slug": "sante",          "icon": "fa-heart-pulse",    "color_class": "ci-sante"}},
+  {"model": "transactions.category", "pk": 7, "fields": {"name": "Formation",       "slug": "formation",      "icon": "fa-graduation-cap", "color_class": "ci-formation"}},
+  {"model": "transactions.category", "pk": 8, "fields": {"name": "Investissement",  "slug": "investissement", "icon": "fa-chart-line",     "color_class": "ci-investissement"}},
+  {"model": "transactions.category", "pk": 9, "fields": {"name": "Divers",          "slug": "divers",         "icon": "fa-box-open",       "color_class": "ci-divers"}}
+]

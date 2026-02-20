@@ -1,0 +1,109 @@
+{% extends 'base_desktop.html' %}
+{% load static %}
+
+{% block title %}Budgets{% endblock %}
+{% block page_title %}Limites budgétaires{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
+
+  <!-- ── Liste des limites ── -->
+  <div class="card" style="overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <p class="serif" style="font-size:17px;font-weight:700;">
+        Suivi des budgets
+        <span style="font-size:13px;color:var(--ink3);font-family:'Plus Jakarta Sans',sans-serif;font-weight:500;margin-left:8px;">
+          ({{ budget_rows|length }} catégorie{{ budget_rows|length|pluralize }})
+        </span>
+      </p>
+    </div>
+
+    {% if budget_rows %}
+    {% for row in budget_rows %}
+    <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="tx-icon {{ row.limit.category.color_class }}">
+            <i class="fa-solid {{ row.limit.category.icon }}" style="font-size:13px;"></i>
+          </div>
+          <div>
+            <p style="font-size:13px;font-weight:600;">{{ row.limit.category.name }}</p>
+            <p style="font-size:11px;color:var(--ink3);margin-top:2px;">
+              {{ row.spent|floatformat:0 }} / {{ row.limit.amount|floatformat:0 }} FCFA
+            </p>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:13px;font-weight:700;
+            color:{% if row.over %}var(--danger){% elif row.warn %}var(--amber){% else %}var(--forest){% endif %};">
+            {{ row.pct }}%
+            {% if row.over %}<i class="fa-solid fa-triangle-exclamation" style="margin-left:4px;font-size:11px;"></i>{% endif %}
+          </span>
+          <form method="post" action="{% url 'transactions:delete_budget' row.limit.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" onclick="return confirm('Supprimer cette limite ?')"
+              style="width:28px;height:28px;border-radius:7px;border:none;background:var(--s2);
+              color:var(--ink3);cursor:pointer;font-size:12px;" title="Supprimer">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+      <!-- Barre de progression -->
+      <div style="height:6px;background:var(--s2);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;border-radius:3px;transition:.4s;width:{{ row.pct }}%;
+          background:{% if row.over %}var(--danger){% elif row.warn %}var(--amber){% else %}var(--forest){% endif %};"></div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="text-align:center;padding:40px 20px;color:var(--ink3);">
+      <i class="fa-solid fa-gauge-high" style="font-size:32px;margin-bottom:12px;display:block;opacity:.3;"></i>
+      <p style="font-size:14px;font-weight:500;">Aucune limite définie</p>
+      <p style="font-size:12px;margin-top:4px;">Ajoutez une limite pour commencer à suivre votre budget</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Formulaire ── -->
+  <div style="position:sticky;top:20px;">
+    <div class="card" style="border-top:3px solid var(--indigo);">
+      <p style="font-size:13px;font-weight:700;margin-bottom:14px;">
+        <i class="fa-solid fa-gauge-high" style="color:var(--indigo);margin-right:7px;"></i>Définir une limite
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label class="field-label">CATÉGORIE</label>
+            {{ form.category }}
+          </div>
+          <div>
+            <label class="field-label">LIMITE MENSUELLE (FCFA)</label>
+            {{ form.amount }}
+          </div>
+          <button type="submit" class="btn-primary" style="background:var(--indigo);">
+            <i class="fa-solid fa-floppy-disk" style="margin-right:6px;"></i>Enregistrer la limite
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {% if budget_alerts %}
+    <div class="card" style="border-left:3px solid var(--danger);margin-top:14px;">
+      <p style="font-size:12px;font-weight:700;color:var(--danger);margin-bottom:10px;">
+        <i class="fa-solid fa-triangle-exclamation" style="margin-right:5px;"></i>
+        {{ alert_count }} alerte{{ alert_count|pluralize }} ce mois
+      </p>
+      {% for a in budget_alerts %}
+      <div style="font-size:12px;color:var(--ink2);margin-bottom:6px;">
+        <strong>{{ a.category }}</strong> — {{ a.pct }}%
+        {% if a.over %}<span style="color:var(--danger);font-weight:700;"> DÉPASSÉ</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

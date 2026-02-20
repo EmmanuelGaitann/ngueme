@@ -1,0 +1,19 @@
+{% load tx_filters %}
+<div class="tx-row">
+  <div style="display:flex;align-items:center;gap:9px;">
+    <div class="tx-icon {{ tx.category.color_class|default:'ci-divers' }}">
+      <i class="fa-solid {{ tx.category.icon|default:'fa-circle-dot' }}"></i>
+    </div>
+    <div>
+      <p style="font-size:12px;font-weight:600;line-height:1.3;">
+        {{ tx.description }}
+        {% if tx.is_planned %}<span class="chip chip-amber" style="margin-left:5px;font-size:10px;">Planifié</span>{% endif %}
+        {% if tx.source == 'ai' %}<span class="chip chip-indigo" style="margin-left:5px;font-size:10px;">IA</span>{% endif %}
+      </p>
+      <p style="font-size:10px;color:var(--ink3);">{{ tx.date|date:"d/m/Y" }} · {{ tx.category.name|default:"Divers" }}</p>
+    </div>
+  </div>
+  <p style="font-size:12px;font-weight:700;white-space:nowrap;color:{% if tx.is_expense %}var(--danger){% else %}var(--forest){% endif %};">
+    {% if tx.is_expense %}−{% else %}+{% endif %}{{ tx.amount|floatformat:0 }} F
+  </p>
+</div>

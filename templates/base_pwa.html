@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1c3f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>{% block title %}FIN.AI{% endblock %}</title>
+<!-- Détection taille d'écran : bascule vers desktop si écran large -->
+<script>
+(function(){
+  var w = window.innerWidth || document.documentElement.clientWidth;
+  var expires = '; max-age=604800; path=/; SameSite=Lax';
+  var current = (document.cookie.match(/finai_view=([^;]+)/) || [])[1];
+  if (w > 768) {
+    document.cookie = 'finai_view=desktop' + expires;
+    if (current !== 'desktop') { window.location.reload(); }
+  } else {
+    document.cookie = 'finai_view=mobile' + expires;
+  }
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/finai.css' %}">
+<link rel="stylesheet" href="{% static 'css/pwa.css' %}">
+<link rel="manifest" href="{% static 'manifest.json' %}">
+</head>
+<body class="pwa-body">
+
+<!-- HEADER PWA -->
+<header class="pwa-header">
+  <div class="pwa-header-inner">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="pwa-logo"><i class="fa-solid fa-seedling"></i></div>
+      <div>
+        <p class="serif" style="font-size:17px;font-weight:700;line-height:1;">FIN.AI</p>
+        <p style="font-size:10px;color:var(--ink3);letter-spacing:.07em;font-weight:700;">CFO AUTONOME</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="live-badge-sm"><span class="live-dot"></span><span>EN DIRECT</span></div>
+      <button id="notif-btn" onclick="requestPushPermission()" style="background:none;border:none;cursor:pointer;padding:4px;" title="Activer notifications">
+        <i class="fa-regular fa-bell" id="notif-icon" style="font-size:16px;color:var(--ink2);"></i>
+      </button>
+      <a href="{% url 'accounts:profile' %}" class="icon-btn-sm"><i class="fa-solid fa-user"></i></a>
+    </div>
+  </div>
+</header>
+
+<!-- MESSAGES -->
+{% if messages %}
+<div style="padding:8px 14px 0;">
+  {% for msg in messages %}
+  <div style="padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:6px;
+    background:{% if 'success' in msg.tags %}var(--forest-l){% else %}var(--danger-l){% endif %};
+    color:{% if 'success' in msg.tags %}var(--forest){% else %}var(--danger){% endif %};">
+    {{ msg }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- CONTENT -->
+<main class="pwa-main">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="pwa-nav">
+  <a href="{% url 'dashboard:home' %}" class="pwa-nav-btn {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name != 'simulateur' %}active{% endif %}">
+    <i class="fa-solid fa-house"></i><span>Tableau</span>
+  </a>
+  <a href="{% url 'transactions:journal' %}" class="pwa-nav-btn {% if request.resolver_match.url_name == 'journal' or request.resolver_match.url_name == 'analyse' %}active{% endif %}">
+    <i class="fa-solid fa-receipt"></i><span>Journal</span>
+  </a>
+  <a href="{% url 'transactions:patrimoine' %}" class="pwa-nav-btn {% if request.resolver_match.url_name == 'patrimoine' %}active{% endif %}">
+    <i class="fa-solid fa-scale-balanced"></i><span>Patrimoine</span>
+  </a>
+  <a href="{% url 'ai_advisor:home' %}" class="pwa-nav-btn {% if request.resolver_match.app_name == 'ai_advisor' %}active{% endif %}">
+    <i class="fa-solid fa-brain"></i><span>IA</span>
+  </a>
+  <a href="{% url 'accounts:profile' %}" class="pwa-nav-btn {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+    <i class="fa-solid fa-user"></i><span>Profil</span>
+  </a>
+</nav>
+
+<div class="toast pwa-toast" id="toast">
+  <i class="fa-solid fa-circle-check" style="color:#6ee09a;"></i>
+  <span id="toast-msg">OK</span>
+</div>
+
+{% load static %}
+<script src="{% static 'js/finai.js' %}"></script>
+{% block extra_js %}{% endblock %}
+<script>
+const VAPID_PUBLIC_KEY   = '{{ vapid_public_key }}';
+const PUSH_SUBSCRIBE_URL = "{% url 'transactions:push_subscribe' %}";
+const PUSH_CHECK_URL     = "{% url 'transactions:push_check' %}";
+if (VAPID_PUBLIC_KEY) initPushNotifications(VAPID_PUBLIC_KEY, PUSH_SUBSCRIBE_URL, PUSH_CHECK_URL);
+</script>
+</body>
+</html>

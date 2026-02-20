@@ -1,0 +1,24 @@
+# Secrets — ne jamais committer
+.env
+
+# Claude Code
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Django
+db.sqlite3
+/staticfiles/
+/media/
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,66 @@
+{% extends 'base_desktop.html' %}
+{% block title %}Passer Pro{% endblock %}
+{% block page_title %}Plan Pro{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;margin:0 auto;">
+  <div class="card" style="border-top:3px solid var(--indigo);text-align:center;padding:32px;">
+    <div style="width:64px;height:64px;background:var(--indigo-l);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <i class="fa-solid fa-crown" style="color:var(--indigo);font-size:26px;"></i>
+    </div>
+    <p class="serif" style="font-size:26px;font-weight:700;margin-bottom:10px;">Passez au Plan Pro</p>
+    <p style="font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:28px;max-width:400px;margin-left:auto;margin-right:auto;">
+      Débloquez toutes les fonctionnalités avancées de FIN.AI pour piloter vos finances avec précision.
+    </p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px;text-align:left;">
+      {% for feature in features %}
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);">
+        <i class="fa-solid fa-circle-check" style="color:var(--forest);font-size:12px;flex-shrink:0;"></i>
+        {{ feature }}
+      </div>
+      {% endfor %}
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);">
+        <i class="fa-solid fa-circle-check" style="color:var(--forest);font-size:12px;flex-shrink:0;"></i>
+        Rapports IA personnalisés
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);">
+        <i class="fa-solid fa-circle-check" style="color:var(--forest);font-size:12px;flex-shrink:0;"></i>
+        Historique illimité
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);">
+        <i class="fa-solid fa-circle-check" style="color:var(--forest);font-size:12px;flex-shrink:0;"></i>
+        Export CSV & PDF
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);">
+        <i class="fa-solid fa-circle-check" style="color:var(--forest);font-size:12px;flex-shrink:0;"></i>
+        Limites budgétaires avancées
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);">
+        <i class="fa-solid fa-circle-check" style="color:var(--forest);font-size:12px;flex-shrink:0;"></i>
+        Prédictions 30 jours
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);">
+        <i class="fa-solid fa-circle-check" style="color:var(--forest);font-size:12px;flex-shrink:0;"></i>
+        Support prioritaire
+      </div>
+    </div>
+
+    <div style="background:var(--indigo-l);border-radius:12px;padding:18px;margin-bottom:24px;">
+      <p style="font-size:28px;font-weight:700;color:var(--indigo);line-height:1;">5 000 <span style="font-size:16px;font-weight:500;">FCFA / mois</span></p>
+      <p style="font-size:12px;color:var(--ink3);margin-top:4px;">Soit ~170 FCFA par jour</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary" style="background:var(--indigo);font-size:15px;padding:14px 32px;">
+        <i class="fa-solid fa-crown" style="margin-right:8px;"></i>Activer le Plan Pro
+      </button>
+    </form>
+    <p style="font-size:11px;color:var(--ink3);margin-top:14px;">
+      <i class="fa-solid fa-shield-halved" style="margin-right:4px;"></i>
+      Paiement sécurisé · Résiliable à tout moment
+    </p>
+  </div>
+</div>
+{% endblock %}
