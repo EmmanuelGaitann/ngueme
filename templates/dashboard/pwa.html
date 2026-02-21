@@ -80,17 +80,31 @@
 <!-- Accès rapides -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
   <a href="{% url 'transactions:journal' %}" style="text-decoration:none;">
-    <div class="card" style="text-align:center;padding:16px;">
-      <i class="fa-solid fa-receipt" style="font-size:22px;color:var(--sienna);margin-bottom:8px;display:block;"></i>
+    <div class="card" style="text-align:center;padding:14px;">
+      <i class="fa-solid fa-receipt" style="font-size:20px;color:var(--sienna);margin-bottom:6px;display:block;"></i>
       <p style="font-size:12px;font-weight:700;">Journal</p>
-      <p style="font-size:10px;color:var(--ink3);">Ajouter une opération</p>
+      <p style="font-size:10px;color:var(--ink3);">Opérations</p>
     </div>
   </a>
   <a href="{% url 'ai_advisor:home' %}" style="text-decoration:none;">
-    <div class="card" style="text-align:center;padding:16px;">
-      <i class="fa-solid fa-brain" style="font-size:22px;color:var(--indigo);margin-bottom:8px;display:block;"></i>
+    <div class="card" style="text-align:center;padding:14px;">
+      <i class="fa-solid fa-brain" style="font-size:20px;color:var(--indigo);margin-bottom:6px;display:block;"></i>
       <p style="font-size:12px;font-weight:700;">Assistant IA</p>
-      <p style="font-size:10px;color:var(--ink3);">Conseil personnalisé</p>
+      <p style="font-size:10px;color:var(--ink3);">Conseil & chat</p>
+    </div>
+  </a>
+  <a href="{% url 'transactions:analyse' %}" style="text-decoration:none;">
+    <div class="card" style="text-align:center;padding:14px;">
+      <i class="fa-solid fa-chart-pie" style="font-size:20px;color:var(--forest);margin-bottom:6px;display:block;"></i>
+      <p style="font-size:12px;font-weight:700;">Diagnostic</p>
+      <p style="font-size:10px;color:var(--ink3);">Analyse financière</p>
+    </div>
+  </a>
+  <a href="{% url 'transactions:budgets' %}" style="text-decoration:none;">
+    <div class="card" style="text-align:center;padding:14px;">
+      <i class="fa-solid fa-gauge-high" style="font-size:20px;color:var(--amber);margin-bottom:6px;display:block;"></i>
+      <p style="font-size:12px;font-weight:700;">Budgets</p>
+      <p style="font-size:10px;color:var(--ink3);">Limites & alertes</p>
     </div>
   </a>
 </div>

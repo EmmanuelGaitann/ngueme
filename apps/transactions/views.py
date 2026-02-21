@@ -278,7 +278,8 @@ def budgets(request):
             'over':  pct >= 100,
             'warn':  80 <= pct < 100,
         })
-    return render(request, 'transactions/budgets.html', {
+    template = 'transactions/budgets_pwa.html' if _is_mobile(request) else 'transactions/budgets.html'
+    return render(request, template, {
         'budget_rows': budget_rows,
         'form':        form,
         'categories':  Category.objects.all(),

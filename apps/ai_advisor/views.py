@@ -9,6 +9,14 @@ from .models import ChatMessage, AIReport
 from .services import weekly_report, chat, predictions, parse_sms_ai
 
 
+def _is_mobile(request):
+    cookie = request.COOKIES.get('finai_view')
+    if cookie:
+        return cookie == 'mobile'
+    ua = request.META.get('HTTP_USER_AGENT', '').lower()
+    return any(k in ua for k in ('mobile', 'android', 'iphone', 'ipad'))
+
+
 @login_required
 def advisor_home(request):
     week_start = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
@@ -18,7 +26,8 @@ def advisor_home(request):
     )
     history = list(ChatMessage.objects.filter(user=request.user).order_by('-created_at')[:10])
     preds   = predictions(request.user)
-    return render(request, 'ai_advisor/advisor.html', {
+    template = 'ai_advisor/advisor_pwa.html' if _is_mobile(request) else 'ai_advisor/advisor.html'
+    return render(request, template, {
         'report':      report_obj.content,
         'history':     reversed(history),
         'predictions': preds,
