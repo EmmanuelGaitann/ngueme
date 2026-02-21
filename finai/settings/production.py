@@ -42,6 +42,8 @@ if _db_engine == 'sqlite3':
         }
     }
 elif _db_engine == 'mysql':
+    import pymysql
+    pymysql.install_as_MySQLdb()
     DATABASES = {
         'default': {
             'ENGINE':   'django.db.backends.mysql',
