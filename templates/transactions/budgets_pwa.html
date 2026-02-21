@@ -6,6 +6,16 @@
 {% block content %}
 <div style="padding:10px 14px 100px;">
 
+  <!-- Lien vers catégories -->
+  <a href="{% url 'transactions:categories' %}" style="text-decoration:none;display:block;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;
+      background:rgba(184,112,32,.08);border:1px solid rgba(184,112,32,.2);">
+      <i class="fa-solid fa-tags" style="color:var(--sienna);font-size:14px;"></i>
+      <p style="font-size:12px;font-weight:700;color:var(--sienna);">Gérer les catégories</p>
+      <i class="fa-solid fa-chevron-right" style="color:var(--sienna);font-size:10px;margin-left:auto;"></i>
+    </div>
+  </a>
+
   <!-- Résumé rapide -->
   {% with total=budget_rows|length %}
   {% with over_count=budget_rows|dictsortreversed:"over"|length %}

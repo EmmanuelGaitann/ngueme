@@ -7,6 +7,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.utils.text import slugify
 from .models import Transaction, Category, BudgetLimit, PatrimoineEntry
 from .forms import TransactionForm, BudgetLimitForm
 from .services import parse_sms as sms_parse
@@ -358,6 +359,82 @@ def delete_patrimoine(request, pk):
         return JsonResponse({'status': 'ok'})
     messages.success(request, 'Entrée supprimée.')
     return redirect('transactions:patrimoine')
+
+
+# ── Gestion des catégories ─────────────────────────────────────────────────────
+
+CATEGORY_ICONS = [
+    ('fa-circle-dot',           'Autre'),
+    ('fa-utensils',             'Alimentation'),
+    ('fa-car',                  'Transport'),
+    ('fa-house',                'Logement'),
+    ('fa-bolt',                 'Électricité'),
+    ('fa-mobile-screen',        'Téléphone'),
+    ('fa-shirt',                'Vêtements'),
+    ('fa-heart-pulse',          'Santé'),
+    ('fa-graduation-cap',       'Éducation'),
+    ('fa-gamepad',              'Loisirs'),
+    ('fa-briefcase',            'Travail'),
+    ('fa-piggy-bank',           'Épargne'),
+    ('fa-chart-line',           'Investissement'),
+    ('fa-hand-holding-dollar',  'Revenus'),
+    ('fa-building-columns',     'Banque'),
+    ('fa-wallet',               'Dépenses'),
+    ('fa-water',                'Eau'),
+    ('fa-wifi',                 'Internet'),
+    ('fa-bus',                  'Bus'),
+    ('fa-plane',                'Voyage'),
+    ('fa-baby',                 'Enfant'),
+    ('fa-dumbbell',             'Sport'),
+    ('fa-book',                 'Livre'),
+    ('fa-paw',                  'Animal'),
+]
+
+CATEGORY_COLORS = [
+    ('ci-forest',  'Vert',    '#1e6b48'),
+    ('ci-danger',  'Rouge',   '#c03030'),
+    ('ci-indigo',  'Indigo',  '#2d3fa0'),
+    ('ci-sienna',  'Orange',  '#b87020'),
+    ('ci-amber',   'Ambre',   '#c48020'),
+    ('ci-divers',  'Gris',    '#64748b'),
+]
+
+
+@login_required
+def manage_categories(request):
+    if request.method == 'POST':
+        name        = request.POST.get('name', '').strip()
+        icon        = request.POST.get('icon', 'fa-circle-dot').strip()
+        color_class = request.POST.get('color_class', 'ci-divers').strip()
+        if name:
+            base_slug = slugify(name)
+            slug = base_slug
+            counter = 1
+            while Category.objects.filter(slug=slug).exists():
+                slug = f'{base_slug}-{counter}'
+                counter += 1
+            Category.objects.create(name=name, slug=slug, icon=icon, color_class=color_class)
+            messages.success(request, f'Catégorie « {name} » créée.')
+        else:
+            messages.error(request, 'Le nom est requis.')
+        return redirect('transactions:categories')
+
+    categories = Category.objects.all().order_by('name')
+    template = 'transactions/categories_pwa.html' if _is_mobile(request) else 'transactions/categories.html'
+    return render(request, template, {
+        'categories': categories,
+        'icons':      CATEGORY_ICONS,
+        'colors':     CATEGORY_COLORS,
+    })
+
+
+@login_required
+@require_POST
+def delete_category(request, pk):
+    cat = get_object_or_404(Category, pk=pk)
+    cat.delete()
+    messages.success(request, 'Catégorie supprimée.')
+    return redirect('transactions:categories')
 
 
 # ── Push Notifications API ─────────────────────────────────────────────────────

@@ -1,0 +1,131 @@
+{% extends 'base_desktop.html' %}
+{% load static %}
+
+{% block title %}Catégories{% endblock %}
+{% block page_title %}Gestion des catégories{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start;">
+
+  <!-- Liste -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <p class="serif" style="font-size:17px;font-weight:700;">Catégories ({{ categories|length }})</p>
+    </div>
+    {% for cat in categories %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="tx-icon {{ cat.color_class }}">
+          <i class="fa-solid {{ cat.icon }}" style="font-size:13px;"></i>
+        </div>
+        <div>
+          <p style="font-size:13px;font-weight:600;">{{ cat.name }}</p>
+          <p style="font-size:11px;color:var(--ink3);">{{ cat.slug }}</p>
+        </div>
+      </div>
+      <form method="post" action="{% url 'transactions:delete_category' cat.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Supprimer « {{ cat.name }} » ?')"
+          style="width:28px;height:28px;border-radius:7px;border:none;background:var(--s2);color:var(--ink3);cursor:pointer;font-size:12px;">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </form>
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:40px;color:var(--ink3);">
+      <i class="fa-solid fa-tags" style="font-size:32px;opacity:.25;display:block;margin-bottom:12px;"></i>
+      <p style="font-size:14px;">Aucune catégorie définie</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Formulaire -->
+  <div style="position:sticky;top:20px;">
+    <div class="card" style="border-top:3px solid var(--sienna);">
+      <p style="font-size:13px;font-weight:700;margin-bottom:16px;">
+        <i class="fa-solid fa-plus-circle" style="color:var(--sienna);margin-right:7px;"></i>Nouvelle catégorie
+      </p>
+      <form method="post" action="{% url 'transactions:categories' %}">
+        {% csrf_token %}
+        <div style="display:flex;flex-direction:column;gap:12px;">
+
+          <div>
+            <label class="field-label">NOM</label>
+            <input class="fin-input" type="text" name="name" id="cat-name" placeholder="Ex: Salaire, Loyer, Courses…" required>
+          </div>
+
+          <!-- Aperçu -->
+          <div id="preview-row" style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--s2);border-radius:10px;">
+            <div id="prev-icon" class="tx-icon ci-divers" style="width:34px;height:34px;">
+              <i id="prev-i" class="fa-solid fa-circle-dot" style="font-size:13px;"></i>
+            </div>
+            <p id="prev-name" style="font-size:13px;font-weight:600;color:var(--ink3);">Aperçu…</p>
+          </div>
+
+          <div>
+            <label class="field-label">ICÔNE</label>
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;" id="icon-grid">
+              {% for icon_val, icon_label in icons %}
+              <div onclick="selectIcon('{{ icon_val }}')" data-icon="{{ icon_val }}" title="{{ icon_label }}"
+                style="height:38px;border-radius:9px;border:2px solid var(--border);display:flex;align-items:center;
+                justify-content:center;cursor:pointer;font-size:15px;color:var(--ink2);">
+                <i class="fa-solid {{ icon_val }}"></i>
+              </div>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="icon" id="icon-input" value="fa-circle-dot">
+          </div>
+
+          <div>
+            <label class="field-label">COULEUR</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;" id="color-grid">
+              {% for cls, label, hex in colors %}
+              <div onclick="selectColor('{{ cls }}')" data-cls="{{ cls }}" title="{{ label }}"
+                style="width:36px;height:36px;border-radius:9px;background:{{ hex }};border:3px solid transparent;cursor:pointer;"></div>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="color_class" id="color-input" value="ci-divers">
+          </div>
+
+          <button type="submit" class="btn-primary btn-sienna">
+            <i class="fa-solid fa-plus" style="margin-right:6px;"></i>Créer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('cat-name').addEventListener('input', function() {
+  const val = this.value.trim();
+  document.getElementById('prev-name').textContent = val || 'Aperçu…';
+  document.getElementById('prev-name').style.color = val ? 'var(--ink1)' : 'var(--ink3)';
+});
+
+function selectIcon(icon) {
+  document.getElementById('icon-input').value = icon;
+  document.getElementById('prev-i').className = 'fa-solid ' + icon;
+  document.querySelectorAll('#icon-grid [data-icon]').forEach(el => {
+    el.style.borderColor = el.dataset.icon === icon ? 'var(--sienna)' : 'var(--border)';
+    el.style.background  = el.dataset.icon === icon ? 'rgba(184,112,32,.1)' : '';
+    el.style.color       = el.dataset.icon === icon ? 'var(--sienna)' : 'var(--ink2)';
+  });
+}
+
+function selectColor(cls) {
+  document.getElementById('color-input').value = cls;
+  document.getElementById('prev-icon').className = 'tx-icon ' + cls;
+  document.querySelectorAll('#color-grid [data-cls]').forEach(el => {
+    el.style.outline       = el.dataset.cls === cls ? '2px solid var(--sienna)' : 'none';
+    el.style.outlineOffset = '2px';
+  });
+}
+
+selectIcon('fa-circle-dot');
+selectColor('ci-divers');
+</script>
+{% endblock %}

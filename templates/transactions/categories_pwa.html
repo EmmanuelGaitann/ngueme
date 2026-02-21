@@ -1,0 +1,186 @@
+{% extends 'base_pwa.html' %}
+{% load static %}
+
+{% block title %}Catégories{% endblock %}
+
+{% block content %}
+<div style="padding:10px 14px 100px;">
+
+  <!-- En-tête -->
+  <div class="card" style="border-top:3px solid var(--sienna);margin-bottom:12px;padding:14px;">
+    <p style="font-size:13px;font-weight:700;margin-bottom:6px;">
+      <i class="fa-solid fa-tags" style="color:var(--sienna);margin-right:7px;"></i>Gestion des catégories
+    </p>
+    <p style="font-size:11px;color:var(--ink3);line-height:1.6;">
+      Créez vos catégories de dépenses et de revenus. Elles seront disponibles dans le journal et les budgets.
+    </p>
+  </div>
+
+  <!-- Liste des catégories -->
+  <div class="card" style="margin-bottom:12px;">
+    <p style="font-size:13px;font-weight:700;margin-bottom:12px;">
+      Catégories ({{ categories|length }})
+    </p>
+
+    {% for cat in categories %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--s2);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="tx-icon {{ cat.color_class }}" style="width:34px;height:34px;flex-shrink:0;">
+          <i class="fa-solid {{ cat.icon }}" style="font-size:13px;"></i>
+        </div>
+        <div>
+          <p style="font-size:13px;font-weight:600;">{{ cat.name }}</p>
+          <p style="font-size:10px;color:var(--ink3);">{{ cat.slug }}</p>
+        </div>
+      </div>
+      <form method="post" action="{% url 'transactions:delete_category' cat.pk %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Supprimer « {{ cat.name }} » ?')"
+          style="width:30px;height:30px;border-radius:8px;border:none;background:var(--s2);color:var(--ink3);cursor:pointer;font-size:11px;">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </form>
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:30px;color:var(--ink3);">
+      <i class="fa-solid fa-tags" style="font-size:30px;opacity:.25;display:block;margin-bottom:10px;"></i>
+      <p style="font-size:13px;font-weight:600;margin-bottom:4px;">Aucune catégorie</p>
+      <p style="font-size:11px;">Appuyez sur + pour créer votre première catégorie</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- FAB Ajouter -->
+<button onclick="document.getElementById('add-overlay').style.display='block'"
+  style="position:fixed;bottom:76px;right:16px;width:52px;height:52px;border-radius:50%;
+  background:var(--sienna);color:#fff;border:none;box-shadow:0 4px 20px rgba(180,80,30,.4);
+  font-size:22px;cursor:pointer;z-index:100;display:flex;align-items:center;justify-content:center;">
+  <i class="fa-solid fa-plus"></i>
+</button>
+
+<!-- Sheet : Créer une catégorie -->
+<div id="add-overlay" onclick="if(event.target===this)this.style.display='none'"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;">
+  <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);
+    border-radius:20px 20px 0 0;padding:20px 16px 34px;max-height:92vh;overflow-y:auto;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <p style="font-size:15px;font-weight:700;">
+        <i class="fa-solid fa-plus-circle" style="color:var(--sienna);margin-right:8px;"></i>Nouvelle catégorie
+      </p>
+      <button onclick="document.getElementById('add-overlay').style.display='none'"
+        style="width:30px;height:30px;border-radius:8px;border:none;background:var(--s2);cursor:pointer;font-size:14px;color:var(--ink2);">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form method="post" action="{% url 'transactions:categories' %}">
+      {% csrf_token %}
+      <div style="display:flex;flex-direction:column;gap:12px;">
+
+        <!-- Nom -->
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">NOM DE LA CATÉGORIE</label>
+          <input class="fin-input" type="text" name="name" id="cat-name" placeholder="Ex: Salaire, Loyer, Alimentation…" required>
+        </div>
+
+        <!-- Aperçu en temps réel -->
+        <div id="preview-row" style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--s2);border-radius:10px;">
+          <div id="prev-icon" class="tx-icon ci-divers" style="width:34px;height:34px;">
+            <i id="prev-i" class="fa-solid fa-circle-dot" style="font-size:13px;"></i>
+          </div>
+          <p id="prev-name" style="font-size:13px;font-weight:600;color:var(--ink3);">Aperçu…</p>
+        </div>
+
+        <!-- Sélecteur d'icône -->
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:8px;">ICÔNE</label>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;" id="icon-grid">
+            {% for icon_val, icon_label in icons %}
+            <div onclick="selectIcon('{{ icon_val }}')" data-icon="{{ icon_val }}"
+              style="height:40px;border-radius:9px;border:2px solid var(--border);display:flex;align-items:center;
+              justify-content:center;cursor:pointer;font-size:15px;color:var(--ink2);">
+              <i class="fa-solid {{ icon_val }}"></i>
+            </div>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="icon" id="icon-input" value="fa-circle-dot">
+        </div>
+
+        <!-- Sélecteur de couleur -->
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:8px;">COULEUR</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="color-grid">
+            {% for cls, label, hex in colors %}
+            <div onclick="selectColor('{{ cls }}')" data-cls="{{ cls }}"
+              style="width:40px;height:40px;border-radius:10px;background:{{ hex }};border:3px solid transparent;cursor:pointer;"
+              title="{{ label }}"></div>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="color_class" id="color-input" value="ci-divers">
+        </div>
+
+        <button type="submit" class="btn-primary btn-sienna" style="width:100%;">
+          <i class="fa-solid fa-plus" style="margin-right:6px;"></i>Créer la catégorie
+        </button>
+
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ICON_COLORS = {
+  'ci-forest':  '#1e6b48',
+  'ci-danger':  '#c03030',
+  'ci-indigo':  '#2d3fa0',
+  'ci-sienna':  '#b87020',
+  'ci-amber':   '#c48020',
+  'ci-divers':  '#64748b',
+};
+
+let currentIcon  = 'fa-circle-dot';
+let currentColor = 'ci-divers';
+
+// Aperçu du nom en temps réel
+document.getElementById('cat-name').addEventListener('input', function() {
+  const val = this.value.trim();
+  document.getElementById('prev-name').textContent = val || 'Aperçu…';
+  document.getElementById('prev-name').style.color = val ? 'var(--ink1)' : 'var(--ink3)';
+});
+
+function selectIcon(icon) {
+  currentIcon = icon;
+  document.getElementById('icon-input').value = icon;
+  document.getElementById('prev-i').className = 'fa-solid ' + icon;
+  document.querySelectorAll('#icon-grid [data-icon]').forEach(el => {
+    el.style.borderColor = el.dataset.icon === icon ? 'var(--sienna)' : 'var(--border)';
+    el.style.background  = el.dataset.icon === icon ? 'var(--sienna-l, rgba(184,112,32,.1))' : '';
+    el.style.color       = el.dataset.icon === icon ? 'var(--sienna)' : 'var(--ink2)';
+  });
+}
+
+function selectColor(cls) {
+  currentColor = cls;
+  document.getElementById('color-input').value = cls;
+  // update preview icon container classes
+  const prev = document.getElementById('prev-icon');
+  prev.className = 'tx-icon ' + cls;
+  // update border selection in grid
+  document.querySelectorAll('#color-grid [data-cls]').forEach(el => {
+    el.style.borderColor = el.dataset.cls === cls ? '#fff' : 'transparent';
+    el.style.outline     = el.dataset.cls === cls ? '2px solid var(--sienna)' : 'none';
+    el.style.outlineOffset = '2px';
+  });
+}
+
+// Sélection par défaut
+selectIcon('fa-circle-dot');
+selectColor('ci-divers');
+</script>
+{% endblock %}
