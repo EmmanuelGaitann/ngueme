@@ -51,10 +51,10 @@ jobs:
             pip install -r requirements.txt --quiet
 
             echo "==> Appliquer les migrations"
-            python manage.py migrate --noinput
+            DJANGO_SETTINGS_MODULE=finai.settings.production python manage.py migrate --noinput
 
             echo "==> Collecter les fichiers statiques"
-            python manage.py collectstatic --noinput
+            DJANGO_SETTINGS_MODULE=finai.settings.production python manage.py collectstatic --noinput
 
             echo "==> Redémarrer l'application (Passenger)"
             mkdir -p tmp && touch tmp/restart.txt
