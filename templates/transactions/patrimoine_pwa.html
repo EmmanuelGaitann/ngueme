@@ -1,0 +1,241 @@
+{% extends 'base_pwa.html' %}
+{% load static %}
+
+{% block title %}Patrimoine{% endblock %}
+
+{% block content %}
+<div style="padding:10px 14px 100px;">
+
+  <!-- Bilan net -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+    <div class="card" style="border-top:3px solid var(--forest);padding:14px;">
+      <p style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em;margin-bottom:4px;">ACTIFS</p>
+      <p class="serif" style="font-size:20px;font-weight:700;color:var(--forest);">{{ summary.actifs|floatformat:0 }}</p>
+      <p style="font-size:10px;color:var(--ink3);">FCFA</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--danger);padding:14px;">
+      <p style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em;margin-bottom:4px;">PASSIFS</p>
+      <p class="serif" style="font-size:20px;font-weight:700;color:var(--danger);">{{ summary.passifs|floatformat:0 }}</p>
+      <p style="font-size:10px;color:var(--ink3);">FCFA</p>
+    </div>
+  </div>
+
+  <div class="card" style="border-top:3px solid var(--indigo);margin-bottom:14px;background:var(--indigo-l);padding:16px;">
+    <p style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em;margin-bottom:4px;">PATRIMOINE NET</p>
+    <p class="serif" style="font-size:28px;font-weight:700;
+      color:{% if summary.net >= 0 %}var(--indigo){% else %}var(--danger){% endif %};">
+      {% if summary.net >= 0 %}+{% endif %}{{ summary.net|floatformat:0 }}
+    </p>
+    <p style="font-size:11px;color:var(--ink3);">FCFA</p>
+  </div>
+
+  <!-- Onglets Actifs / Passifs -->
+  <div style="display:flex;gap:6px;margin-bottom:10px;">
+    <button id="tab-actif" onclick="switchPatTab('actif')"
+      style="flex:1;padding:9px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:var(--forest);color:#fff;">
+      <i class="fa-solid fa-circle-arrow-up" style="margin-right:5px;"></i>Actifs ({{ actifs|length }})
+    </button>
+    <button id="tab-passif" onclick="switchPatTab('passif')"
+      style="flex:1;padding:9px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:var(--s2);color:var(--ink3);">
+      <i class="fa-solid fa-circle-arrow-down" style="margin-right:5px;"></i>Passifs ({{ passifs|length }})
+    </button>
+  </div>
+
+  <!-- Liste des actifs -->
+  <div id="panel-actif" class="card" style="margin-bottom:12px;border-top:3px solid var(--forest);">
+    {% for e in actifs %}
+    <div class="tx-row">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="tx-icon ci-forest">
+          <i class="fa-solid
+            {% if e.category == 'immobilier' %}fa-house
+            {% elif e.category == 'business' %}fa-briefcase
+            {% elif e.category == 'epargne' %}fa-piggy-bank
+            {% elif e.category == 'investissement' %}fa-chart-line
+            {% elif e.category == 'vehicule' %}fa-car
+            {% else %}fa-circle-dot{% endif %}" style="font-size:12px;"></i>
+        </div>
+        <div>
+          <p style="font-size:12px;font-weight:600;">{{ e.label }}</p>
+          <p style="font-size:10px;color:var(--ink3);">{{ e.get_category_display }} · {{ e.date|date:"d/m/Y" }}</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <p style="font-size:13px;font-weight:700;color:var(--forest);">+{{ e.valeur|floatformat:0 }} F</p>
+        <form method="post" action="{% url 'transactions:delete_patrimoine' e.pk %}" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" onclick="return confirm('Supprimer ?')"
+            style="width:28px;height:28px;border-radius:7px;border:none;background:var(--s2);color:var(--ink3);cursor:pointer;font-size:11px;">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+    {% empty %}
+    <p style="font-size:12px;color:var(--ink3);padding:14px;text-align:center;">Aucun actif enregistré</p>
+    {% endfor %}
+  </div>
+
+  <!-- Liste des passifs -->
+  <div id="panel-passif" class="card" style="display:none;margin-bottom:12px;border-top:3px solid var(--danger);">
+    {% for e in passifs %}
+    <div class="tx-row">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="tx-icon ci-danger">
+          <i class="fa-solid
+            {% if e.category == 'dette' %}fa-hand-holding-dollar
+            {% elif e.category == 'credit' %}fa-credit-card
+            {% else %}fa-circle-dot{% endif %}" style="font-size:12px;"></i>
+        </div>
+        <div>
+          <p style="font-size:12px;font-weight:600;">{{ e.label }}</p>
+          <p style="font-size:10px;color:var(--ink3);">{{ e.get_category_display }} · {{ e.date|date:"d/m/Y" }}</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <p style="font-size:13px;font-weight:700;color:var(--danger);">−{{ e.valeur|floatformat:0 }} F</p>
+        <form method="post" action="{% url 'transactions:delete_patrimoine' e.pk %}" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" onclick="return confirm('Supprimer ?')"
+            style="width:28px;height:28px;border-radius:7px;border:none;background:var(--s2);color:var(--ink3);cursor:pointer;font-size:11px;">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+    {% empty %}
+    <p style="font-size:12px;color:var(--forest);padding:14px;text-align:center;">
+      <i class="fa-solid fa-circle-check" style="margin-right:5px;"></i>Aucune dette enregistrée
+    </p>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- ── FAB Ajouter ── -->
+<button onclick="document.getElementById('add-overlay').style.display='block'"
+  style="position:fixed;bottom:76px;right:16px;width:52px;height:52px;border-radius:50%;
+  background:var(--sienna);color:#fff;border:none;box-shadow:0 4px 20px rgba(180,80,30,.4);
+  font-size:22px;cursor:pointer;z-index:100;display:flex;align-items:center;justify-content:center;">
+  <i class="fa-solid fa-plus"></i>
+</button>
+
+<!-- ── Sheet : Ajouter une entrée patrimoine ── -->
+<div id="add-overlay" onclick="if(event.target===this)this.style.display='none'"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;">
+  <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);
+    border-radius:20px 20px 0 0;padding:20px 16px 34px;max-height:92vh;overflow-y:auto;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <p style="font-size:15px;font-weight:700;">
+        <i class="fa-solid fa-plus-circle" style="color:var(--sienna);margin-right:8px;"></i>Ajouter une entrée
+      </p>
+      <button onclick="document.getElementById('add-overlay').style.display='none'"
+        style="width:30px;height:30px;border-radius:8px;border:none;background:var(--s2);cursor:pointer;font-size:14px;color:var(--ink2);">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form method="post" action="{% url 'transactions:add_patrimoine' %}">
+      {% csrf_token %}
+      <div style="display:flex;flex-direction:column;gap:10px;">
+
+        <!-- Type actif / passif -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <label style="cursor:pointer;">
+            <input type="radio" name="ptype" value="actif" checked style="display:none;" id="r-actif">
+            <div id="lbl-actif" onclick="selectPtype('actif')"
+              style="padding:10px;border-radius:10px;border:2px solid var(--forest);background:var(--forest-l);
+              text-align:center;font-size:12px;font-weight:700;color:var(--forest);">
+              <i class="fa-solid fa-circle-arrow-up"></i> Actif
+            </div>
+          </label>
+          <label style="cursor:pointer;">
+            <input type="radio" name="ptype" value="passif" style="display:none;" id="r-passif">
+            <div id="lbl-passif" onclick="selectPtype('passif')"
+              style="padding:10px;border-radius:10px;border:2px solid var(--border);
+              text-align:center;font-size:12px;font-weight:700;color:var(--ink3);">
+              <i class="fa-solid fa-circle-arrow-down"></i> Passif
+            </div>
+          </label>
+        </div>
+
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">CATÉGORIE</label>
+          <select class="fin-input" name="category" style="font-size:13px;">
+            <optgroup label="Actifs">
+              <option value="immobilier">Immobilier</option>
+              <option value="business">Business / Entreprise</option>
+              <option value="epargne">Épargne / Liquidités</option>
+              <option value="investissement">Investissement (BVMAC)</option>
+              <option value="vehicule">Véhicule</option>
+            </optgroup>
+            <optgroup label="Passifs">
+              <option value="dette">Dette / Emprunt</option>
+              <option value="credit">Crédit</option>
+            </optgroup>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">LIBELLÉ</label>
+          <input class="fin-input" type="text" name="label" placeholder="Ex: Appartement Bastos, Voiture Toyota…" required>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">VALEUR (FCFA)</label>
+            <input class="fin-input" type="number" name="valeur" placeholder="5 000 000" min="1" required>
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">DATE</label>
+            <input class="fin-input" type="date" name="date" id="pat-date" required>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">NOTES (optionnel)</label>
+          <input class="fin-input" type="text" name="notes" placeholder="Estimation, remarques…">
+        </div>
+
+        <button type="submit" class="btn-primary btn-sienna" style="width:100%;">
+          <i class="fa-solid fa-plus" style="margin-right:6px;"></i>Enregistrer
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('pat-date').value = new Date().toISOString().split('T')[0];
+
+function switchPatTab(tab) {
+  const isActif = tab === 'actif';
+  document.getElementById('panel-actif').style.display  = isActif ? 'block' : 'none';
+  document.getElementById('panel-passif').style.display = isActif ? 'none'  : 'block';
+  document.getElementById('tab-actif').style.background  = isActif ? 'var(--forest)' : 'var(--s2)';
+  document.getElementById('tab-actif').style.color       = isActif ? '#fff'           : 'var(--ink3)';
+  document.getElementById('tab-passif').style.background = isActif ? 'var(--s2)'      : 'var(--danger)';
+  document.getElementById('tab-passif').style.color      = isActif ? 'var(--ink3)'    : '#fff';
+}
+
+function selectPtype(val) {
+  document.getElementById('r-actif').checked  = (val === 'actif');
+  document.getElementById('r-passif').checked = (val === 'passif');
+  const la = document.getElementById('lbl-actif');
+  const lp = document.getElementById('lbl-passif');
+  if (val === 'actif') {
+    la.style.borderColor = 'var(--forest)'; la.style.background = 'var(--forest-l)'; la.style.color = 'var(--forest)';
+    lp.style.borderColor = 'var(--border)';  lp.style.background = '';               lp.style.color = 'var(--ink3)';
+  } else {
+    lp.style.borderColor = 'var(--danger)'; lp.style.background = 'var(--danger-l)'; lp.style.color = 'var(--danger)';
+    la.style.borderColor = 'var(--border)';  la.style.background = '';               la.style.color = 'var(--ink3)';
+  }
+}
+</script>
+{% endblock %}

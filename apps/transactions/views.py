@@ -16,6 +16,14 @@ def _is_ajax(request):
     return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
 
+def _is_mobile(request):
+    cookie = request.COOKIES.get('finai_view')
+    if cookie:
+        return cookie == 'mobile'
+    ua = request.META.get('HTTP_USER_AGENT', '').lower()
+    return any(k in ua for k in ('mobile', 'android', 'iphone', 'ipad'))
+
+
 @login_required
 def journal(request):
     qs = Transaction.objects.filter(user=request.user).select_related('category')
@@ -39,7 +47,8 @@ def journal(request):
 
     paginator = Paginator(qs, 25)
     page      = paginator.get_page(request.GET.get('page', 1))
-    return render(request, 'transactions/journal.html', {
+    template  = 'transactions/journal_pwa.html' if _is_mobile(request) else 'transactions/journal.html'
+    return render(request, template, {
         'transactions': page,
         'categories':   Category.objects.all(),
         'form':         TransactionForm(),
@@ -90,7 +99,8 @@ def analyse(request):
 
     cat_data = [{'label': r['category__name'] or 'Divers', 'total': int(r['total'])} for r in cat_rows]
 
-    return render(request, 'transactions/analyse.html', {
+    template = 'transactions/analyse_pwa.html' if _is_mobile(request) else 'transactions/analyse.html'
+    return render(request, template, {
         'stats':        stats,
         'date_from':    date_from.isoformat(),
         'date_to':      date_to.isoformat(),
@@ -300,7 +310,8 @@ def patrimoine(request):
     cat_actifs  = list(actifs.values('category').annotate(total=DSum('valeur')).order_by('-total'))
     cat_passifs = list(passifs.values('category').annotate(total=DSum('valeur')).order_by('-total'))
 
-    return render(request, 'transactions/patrimoine.html', {
+    template = 'transactions/patrimoine_pwa.html' if _is_mobile(request) else 'transactions/patrimoine.html'
+    return render(request, template, {
         'summary':    summary,
         'actifs':     actifs,
         'passifs':    passifs,

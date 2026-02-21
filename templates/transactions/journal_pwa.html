@@ -1,0 +1,421 @@
+{% extends 'base_pwa.html' %}
+{% load static %}
+
+{% block title %}Journal{% endblock %}
+
+{% block content %}
+
+<!-- ── En-tête + filtres ── -->
+<div style="padding:10px 14px 0;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <p class="serif" style="font-size:16px;font-weight:700;">
+      Journal
+      <span style="font-size:12px;color:var(--ink3);font-family:'Plus Jakarta Sans',sans-serif;font-weight:500;"> · {{ total_count }}</span>
+    </p>
+    <div style="display:flex;gap:6px;">
+      <a href="{% url 'transactions:analyse' %}"
+         style="width:34px;height:34px;border-radius:10px;background:var(--indigo-l);color:var(--indigo);
+         display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;" title="Diagnostic">
+        <i class="fa-solid fa-chart-pie"></i>
+      </a>
+      <a href="{% url 'transactions:export_csv' %}{% if date_from or date_to %}?date_from={{ date_from }}&date_to={{ date_to }}{% endif %}"
+         style="width:34px;height:34px;border-radius:10px;background:var(--forest-l);color:var(--forest);
+         display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;" title="Exporter CSV">
+        <i class="fa-solid fa-file-csv"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Filtres rapides -->
+  <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">
+    <a href="?type=" style="flex-shrink:0;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;
+      {% if not type_filter %}background:var(--indigo);color:#fff;{% else %}background:var(--s2);color:var(--ink3);{% endif %}">Tous</a>
+    <a href="?type=income" style="flex-shrink:0;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;
+      {% if type_filter == 'income' %}background:var(--forest);color:#fff;{% else %}background:var(--s2);color:var(--ink3);{% endif %}">Revenus</a>
+    <a href="?type=expense" style="flex-shrink:0;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;
+      {% if type_filter == 'expense' %}background:var(--danger);color:#fff;{% else %}background:var(--s2);color:var(--ink3);{% endif %}">Dépenses</a>
+    <a href="?type=planned_expense" style="flex-shrink:0;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;
+      {% if type_filter == 'planned_expense' %}background:var(--amber);color:#fff;{% else %}background:var(--s2);color:var(--ink3);{% endif %}">Planifiées</a>
+  </div>
+</div>
+
+<!-- ── Liste des transactions ── -->
+<div style="padding:10px 14px 100px;" id="tx-list">
+  {% for tx in transactions %}
+  <div class="card" style="margin-bottom:8px;padding:10px 12px;" data-id="{{ tx.id }}">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div class="tx-icon {{ tx.category.color_class|default:'ci-divers' }}" style="flex-shrink:0;">
+        <i class="fa-solid {{ tx.category.icon|default:'fa-circle-dot' }}" style="font-size:12px;"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <p style="font-size:13px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          {{ tx.description }}
+          {% if tx.is_planned %}<span class="chip chip-amber" style="font-size:9px;margin-left:4px;">Plan.</span>{% endif %}
+          {% if tx.source == 'sms' %}<span class="chip chip-indigo" style="font-size:9px;margin-left:4px;">SMS</span>{% elif tx.source == 'ai' %}<span class="chip chip-indigo" style="font-size:9px;margin-left:4px;">IA</span>{% endif %}
+        </p>
+        <p style="font-size:10px;color:var(--ink3);">{{ tx.date|date:"d/m/Y" }} · {{ tx.category.name|default:"Divers" }}</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+        <p style="font-size:13px;font-weight:700;white-space:nowrap;
+          color:{% if tx.is_expense %}var(--danger){% else %}var(--forest){% endif %};">
+          {% if tx.is_expense %}−{% else %}+{% endif %}{{ tx.amount|floatformat:0 }} F
+        </p>
+        <button onclick="openEdit({{ tx.id }})"
+          style="width:30px;height:30px;border-radius:8px;border:none;background:var(--indigo-l);color:var(--indigo);cursor:pointer;font-size:11px;">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        <button onclick="deleteTx({{ tx.id }}, this)"
+          style="width:30px;height:30px;border-radius:8px;border:none;background:var(--s2);color:var(--ink3);cursor:pointer;font-size:11px;">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div style="text-align:center;padding:50px 20px;color:var(--ink3);">
+    <i class="fa-solid fa-receipt" style="font-size:40px;opacity:.25;display:block;margin-bottom:14px;"></i>
+    <p style="font-size:14px;font-weight:600;">Aucune transaction</p>
+    <p style="font-size:12px;margin-top:4px;">Appuyez sur <strong>+</strong> pour ajouter</p>
+  </div>
+  {% endfor %}
+
+  <!-- Pagination -->
+  {% if transactions.has_other_pages %}
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;">
+    {% if transactions.has_previous %}
+    <a href="?page={{ transactions.previous_page_number }}{% if type_filter %}&type={{ type_filter }}{% endif %}"
+       style="padding:9px 18px;border-radius:10px;background:var(--s2);color:var(--ink2);font-size:13px;font-weight:700;text-decoration:none;">
+      <i class="fa-solid fa-chevron-left"></i>
+    </a>
+    {% endif %}
+    <span style="font-size:12px;color:var(--ink3);">{{ transactions.number }} / {{ transactions.paginator.num_pages }}</span>
+    {% if transactions.has_next %}
+    <a href="?page={{ transactions.next_page_number }}{% if type_filter %}&type={{ type_filter }}{% endif %}"
+       style="padding:9px 18px;border-radius:10px;background:var(--s2);color:var(--ink2);font-size:13px;font-weight:700;text-decoration:none;">
+      <i class="fa-solid fa-chevron-right"></i>
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── FAB Ajouter ── -->
+<button onclick="openAddSheet()"
+  style="position:fixed;bottom:76px;right:16px;width:52px;height:52px;border-radius:50%;
+  background:var(--sienna);color:#fff;border:none;box-shadow:0 4px 20px rgba(180,80,30,.4);
+  font-size:22px;cursor:pointer;z-index:100;display:flex;align-items:center;justify-content:center;">
+  <i class="fa-solid fa-plus"></i>
+</button>
+
+<!-- ── Sheet : Ajouter une transaction ── -->
+<div id="add-overlay" onclick="if(event.target===this)closeAddSheet()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;">
+  <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);
+    border-radius:20px 20px 0 0;padding:20px 16px 34px;max-height:92vh;overflow-y:auto;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <p style="font-size:15px;font-weight:700;">Ajouter une opération</p>
+      <button onclick="closeAddSheet()" style="width:30px;height:30px;border-radius:8px;border:none;background:var(--s2);cursor:pointer;font-size:14px;color:var(--ink2);">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Onglets SMS / Manuel -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button id="tab-sms" onclick="switchTab('sms')"
+        style="flex:1;padding:9px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:var(--forest);color:#fff;">
+        <i class="fa-solid fa-comment-sms" style="margin-right:5px;"></i>Parser SMS
+      </button>
+      <button id="tab-manual" onclick="switchTab('manual')"
+        style="flex:1;padding:9px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:var(--s2);color:var(--ink3);">
+        <i class="fa-solid fa-pen-to-square" style="margin-right:5px;"></i>Manuel
+      </button>
+    </div>
+
+    <!-- Panel : SMS -->
+    <div id="panel-sms">
+      <textarea class="fin-input" rows="4" id="sms-txt" style="resize:none;margin-bottom:8px;"
+        placeholder="Collez votre SMS Mobile Money ici…&#10;Ex: Vous avez reçu 25000 FCFA de DUPOND…"></textarea>
+      <button onclick="doSMS()" class="btn-primary btn-forest" style="width:100%;margin-bottom:10px;">
+        <i class="fa-solid fa-bolt" style="margin-right:6px;"></i>Analyser le SMS
+      </button>
+      <div id="sms-result" style="display:none;background:var(--s2);border-radius:12px;padding:12px;">
+        <p style="font-size:11px;font-weight:700;color:var(--forest);margin-bottom:8px;">
+          <i class="fa-solid fa-circle-check" style="margin-right:4px;"></i>Transaction identifiée
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px;">
+          <div><p style="font-size:10px;color:var(--ink3);font-weight:700;margin-bottom:2px;">MONTANT</p><strong id="r-amount">—</strong></div>
+          <div><p style="font-size:10px;color:var(--ink3);font-weight:700;margin-bottom:2px;">TYPE</p><strong id="r-type">—</strong></div>
+          <div><p style="font-size:10px;color:var(--ink3);font-weight:700;margin-bottom:2px;">RÉSEAU</p><strong id="r-network">—</strong></div>
+          <div><p style="font-size:10px;color:var(--ink3);font-weight:700;margin-bottom:2px;">DATE</p><strong id="r-date">—</strong></div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">CATÉGORIE</label>
+          <select class="fin-input" id="sms-cat" style="font-size:13px;">
+            {% for cat in categories %}
+            <option value="{{ cat.slug }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button onclick="addFromSMS()" class="btn-primary btn-forest" style="width:100%;">
+          <i class="fa-solid fa-plus" style="margin-right:5px;"></i>Ajouter au journal
+        </button>
+      </div>
+    </div>
+
+    <!-- Panel : Manuel -->
+    <div id="panel-manual" style="display:none;">
+      <form method="post" action="{% url 'transactions:add' %}" id="manual-form">
+        {% csrf_token %}
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">MONTANT (FCFA)</label>
+              <input class="fin-input" type="number" name="amount" placeholder="25 000" min="1" required>
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">TYPE</label>
+              <select class="fin-input" name="type">
+                <option value="expense">Dépense</option>
+                <option value="income">Revenu</option>
+                <option value="planned_expense">Dép. planifiée</option>
+                <option value="planned_income">Rev. attendu</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">DESCRIPTION</label>
+            <input class="fin-input" type="text" name="description" placeholder="Loyer, salaire, formation…" required>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">CATÉGORIE</label>
+              <select class="fin-input" name="category">
+                {% for cat in categories %}
+                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">DATE</label>
+              <input class="fin-input" type="date" name="date" id="f-date" required>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary btn-sienna" style="width:100%;">
+            <i class="fa-solid fa-plus" style="margin-right:6px;"></i>Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Sheet : Modifier une transaction ── -->
+<div id="edit-overlay" onclick="if(event.target===this)closeEdit()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;">
+  <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);
+    border-radius:20px 20px 0 0;padding:20px 16px 34px;max-height:92vh;overflow-y:auto;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <p style="font-size:15px;font-weight:700;">
+        <i class="fa-solid fa-pen" style="color:var(--indigo);margin-right:8px;"></i>Modifier
+      </p>
+      <button onclick="closeEdit()" style="width:30px;height:30px;border-radius:8px;border:none;background:var(--s2);cursor:pointer;font-size:14px;color:var(--ink2);">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">MONTANT (FCFA)</label>
+          <input class="fin-input" type="number" id="edit-amount" min="1" required>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">TYPE</label>
+          <select class="fin-input" id="edit-type">
+            <option value="expense">Dépense</option>
+            <option value="income">Revenu</option>
+            <option value="planned_expense">Dép. planifiée</option>
+            <option value="planned_income">Rev. attendu</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">DESCRIPTION</label>
+        <input class="fin-input" type="text" id="edit-desc" required>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">CATÉGORIE</label>
+          <select class="fin-input" id="edit-cat">
+            <option value="">— Aucune —</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">DATE</label>
+          <input class="fin-input" type="date" id="edit-date" required>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="submitEdit()" class="btn-primary" style="flex:1;background:var(--indigo);">
+          <i class="fa-solid fa-floppy-disk" style="margin-right:6px;"></i>Enregistrer
+        </button>
+        <button onclick="closeEdit()"
+          style="padding:10px 16px;border-radius:10px;border:none;background:var(--s2);color:var(--ink2);cursor:pointer;font-size:13px;font-weight:600;">
+          Annuler
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PARSE_URL  = "{% url 'transactions:parse_sms' %}";
+const ADDSMS_URL = "{% url 'transactions:add_from_sms' %}";
+const DELETE_URL = "{% url 'transactions:delete' pk=0 %}".replace('/0/', '/');
+const EDIT_URL   = "{% url 'transactions:edit' pk=0 %}".replace('/0/', '/');
+
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+
+let smsData  = null;
+let editTxId = null;
+
+// ── Sheets ──────────────────────────────────────────────────────────────────
+
+function openAddSheet() {
+  document.getElementById('add-overlay').style.display = 'block';
+}
+
+function closeAddSheet() {
+  document.getElementById('add-overlay').style.display = 'none';
+  document.getElementById('sms-result').style.display  = 'none';
+  document.getElementById('sms-txt').value = '';
+  smsData = null;
+}
+
+function switchTab(tab) {
+  const isSms = tab === 'sms';
+  document.getElementById('panel-sms').style.display    = isSms ? 'block' : 'none';
+  document.getElementById('panel-manual').style.display = isSms ? 'none'  : 'block';
+  document.getElementById('tab-sms').style.background    = isSms ? 'var(--forest)' : 'var(--s2)';
+  document.getElementById('tab-sms').style.color         = isSms ? '#fff'           : 'var(--ink3)';
+  document.getElementById('tab-manual').style.background = isSms ? 'var(--s2)'      : 'var(--sienna)';
+  document.getElementById('tab-manual').style.color      = isSms ? 'var(--ink3)'    : '#fff';
+}
+
+// ── SMS Parser ───────────────────────────────────────────────────────────────
+
+async function doSMS() {
+  const sms = document.getElementById('sms-txt').value.trim();
+  if (!sms) { toast('Collez un SMS d\'abord', 'err'); return; }
+  try {
+    const r = await parseSMS(PARSE_URL, sms);
+    if (r.status === 'ok') {
+      smsData = r.data;
+      document.getElementById('r-amount').textContent  = fmt(smsData.amount) + ' FCFA';
+      document.getElementById('r-type').textContent    = smsData.type === 'income' ? 'Revenu' : 'Dépense';
+      document.getElementById('r-network').textContent = smsData.network || '—';
+      document.getElementById('r-date').textContent    = smsData.date || '—';
+      document.getElementById('sms-result').style.display = 'block';
+      toast('SMS analysé !');
+    } else {
+      toast('SMS non reconnu — essayez la saisie manuelle', 'err');
+    }
+  } catch (e) { toast('Erreur réseau', 'err'); }
+}
+
+async function addFromSMS() {
+  if (!smsData) return;
+  smsData.category = document.getElementById('sms-cat').value;
+  try {
+    const r = await fetch(ADDSMS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+      body: JSON.stringify(smsData)
+    });
+    const d = await r.json();
+    if (d.status === 'ok') {
+      toast('Transaction ajoutée !');
+      closeAddSheet();
+      setTimeout(() => location.reload(), 700);
+    }
+  } catch (e) { toast('Erreur lors de l\'ajout', 'err'); }
+}
+
+// ── Supprimer ────────────────────────────────────────────────────────────────
+
+async function deleteTx(id, btn) {
+  if (!confirm('Supprimer cette transaction ?')) return;
+  try {
+    const r = await fetch(DELETE_URL + id + '/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf(), 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const d = await r.json();
+    if (d.status === 'ok') {
+      const row = btn.closest('.card');
+      row.style.opacity    = '0';
+      row.style.transition = '.3s';
+      setTimeout(() => { row.remove(); toast('Transaction supprimée'); }, 300);
+    }
+  } catch (e) { toast('Erreur réseau', 'err'); }
+}
+
+// ── Modifier ─────────────────────────────────────────────────────────────────
+
+async function openEdit(id) {
+  editTxId = id;
+  try {
+    const r = await fetch(EDIT_URL + id + '/');
+    const d = await r.json();
+    document.getElementById('edit-amount').value = d.amount;
+    document.getElementById('edit-type').value   = d.type;
+    document.getElementById('edit-desc').value   = d.description;
+    document.getElementById('edit-cat').value    = d.category || '';
+    document.getElementById('edit-date').value   = d.date;
+    document.getElementById('edit-overlay').style.display = 'block';
+  } catch (e) { toast('Impossible de charger la transaction', 'err'); }
+}
+
+function closeEdit() {
+  document.getElementById('edit-overlay').style.display = 'none';
+  editTxId = null;
+}
+
+async function submitEdit() {
+  if (!editTxId) return;
+  const body = new URLSearchParams({
+    amount:              document.getElementById('edit-amount').value,
+    type:                document.getElementById('edit-type').value,
+    description:         document.getElementById('edit-desc').value,
+    category:            document.getElementById('edit-cat').value,
+    date:                document.getElementById('edit-date').value,
+    csrfmiddlewaretoken: getCsrf(),
+  });
+  try {
+    const r = await fetch(EDIT_URL + editTxId + '/', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body,
+    });
+    const d = await r.json();
+    if (d.status === 'ok') {
+      toast('Transaction modifiée');
+      closeEdit();
+      setTimeout(() => location.reload(), 700);
+    } else {
+      toast('Erreur de validation', 'err');
+    }
+  } catch (e) { toast('Erreur réseau', 'err'); }
+}
+</script>
+{% endblock %}
