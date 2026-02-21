@@ -6,6 +6,14 @@ from django.contrib import messages
 from .forms import LoginForm, RegisterForm, ProfileForm
 
 
+def _is_mobile(request):
+    cookie = request.COOKIES.get('finai_view')
+    if cookie:
+        return cookie == 'mobile'
+    ua = request.META.get('HTTP_USER_AGENT', '').lower()
+    return any(k in ua for k in ('mobile', 'android', 'iphone', 'ipad'))
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard:home')
@@ -38,7 +46,8 @@ def profile_view(request):
         form.save()
         messages.success(request, 'Profil mis à jour.')
         return redirect('accounts:profile')
-    return render(request, 'accounts/profile.html', {'form': form})
+    template = 'accounts/profile_pwa.html' if _is_mobile(request) else 'accounts/profile.html'
+    return render(request, template, {'form': form})
 
 
 @login_required

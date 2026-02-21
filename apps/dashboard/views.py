@@ -65,7 +65,8 @@ def offline(request):
 @login_required
 def simulateur(request):
     """Page simulateur avec produits locaux d'Afrique Centrale."""
-    stats = get_monthly_stats(request.user)
-    return render(request, 'dashboard/simulateur.html', {
+    stats    = get_monthly_stats(request.user)
+    template = 'dashboard/simulateur_pwa.html' if _is_mobile(request) else 'dashboard/simulateur.html'
+    return render(request, template, {
         'invest_capacity': int(stats['invest_capacity']),
     })

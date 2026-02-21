@@ -1,0 +1,268 @@
+{% extends 'base_pwa.html' %}
+{% load static %}
+
+{% block title %}Simulateur{% endblock %}
+
+{% block content %}
+<div style="padding:10px 14px 100px;">
+
+  <!-- En-tête -->
+  <div class="card" style="border-top:3px solid var(--forest);margin-bottom:12px;padding:14px;">
+    <p style="font-size:13px;font-weight:700;margin-bottom:4px;">
+      <i class="fa-solid fa-rocket" style="color:var(--forest);margin-right:7px;"></i>Simulateur d'Investissement
+    </p>
+    <p style="font-size:11px;color:var(--ink3);line-height:1.6;">
+      Projetez votre richesse avec les produits financiers d'Afrique Centrale.
+    </p>
+  </div>
+
+  <!-- Paramètres -->
+  <div class="card" style="margin-bottom:12px;">
+    <p style="font-size:13px;font-weight:700;margin-bottom:12px;">
+      <i class="fa-solid fa-sliders" style="color:var(--forest);margin-right:7px;"></i>Paramètres
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">CAPITAL INITIAL (FCFA)</label>
+        <input class="fin-input" type="number" id="s-capital" value="{{ invest_capacity|default:500000 }}" min="0" oninput="calcProj()">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">ÉPARGNE MENSUELLE (FCFA)</label>
+        <input class="fin-input" type="number" id="s-monthly" value="50000" min="0" oninput="calcProj()">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--ink3);font-weight:700;display:block;margin-bottom:4px;">RENDEMENT ANNUEL (%)</label>
+        <input class="fin-input" type="number" id="s-rate" value="6" step="0.5" min="0" max="100" oninput="calcProj()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Produits locaux -->
+  <div class="card" style="margin-bottom:12px;">
+    <p style="font-size:13px;font-weight:700;margin-bottom:12px;">
+      <i class="fa-solid fa-landmark" style="color:var(--sienna);margin-right:7px;"></i>Produits locaux
+    </p>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+
+      <div class="prod-btn" onclick="setProduct(3, this)" data-rate="3"
+        style="padding:12px;border-radius:12px;border:1px solid var(--border);cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <p style="font-size:12px;font-weight:700;">Épargne bancaire</p>
+            <p style="font-size:11px;color:var(--ink3);">Faible risque · Liquidités</p>
+          </div>
+          <span class="chip chip-indigo">3 %/an</span>
+        </div>
+      </div>
+
+      <div class="prod-btn active-prod" onclick="setProduct(7, this)" data-rate="7"
+        style="padding:12px;border-radius:12px;border:2px solid var(--forest);cursor:pointer;background:var(--forest-l);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <p style="font-size:12px;font-weight:700;color:var(--forest);">BVMAC — Obligations</p>
+            <p style="font-size:11px;color:var(--forest);">Risque modéré · Recommandé</p>
+          </div>
+          <span class="chip chip-green">6-8 %/an</span>
+        </div>
+      </div>
+
+      <div class="prod-btn" onclick="setProduct(12, this)" data-rate="12"
+        style="padding:12px;border-radius:12px;border:1px solid var(--border);cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <p style="font-size:12px;font-weight:700;">Immobilier locatif</p>
+            <p style="font-size:11px;color:var(--ink3);">Moyen terme · Capital ≥ 5M</p>
+          </div>
+          <span class="chip chip-sienna">10-15 %/an</span>
+        </div>
+      </div>
+
+      <div class="prod-btn" onclick="setProduct(20, this)" data-rate="20"
+        style="padding:12px;border-radius:12px;border:1px solid var(--border);cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <p style="font-size:12px;font-weight:700;">Business / Commerce</p>
+            <p style="font-size:11px;color:var(--ink3);">Risque élevé · Variable</p>
+          </div>
+          <span class="chip chip-amber">15-25 %/an</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Horizon -->
+  <div class="card" style="margin-bottom:12px;">
+    <p style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em;margin-bottom:8px;">HORIZON DE PROJECTION</p>
+    <div style="display:flex;gap:6px;">
+      <button class="hz-btn sel" onclick="setHz(1, this)"
+        style="flex:1;padding:10px 6px;border-radius:10px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:var(--ink);color:#fff;">1 an</button>
+      <button class="hz-btn" onclick="setHz(5, this)"
+        style="flex:1;padding:10px 6px;border-radius:10px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:var(--s2);color:var(--ink2);">5 ans</button>
+      <button class="hz-btn" onclick="setHz(10, this)"
+        style="flex:1;padding:10px 6px;border-radius:10px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:var(--s2);color:var(--ink2);">10 ans</button>
+      <button class="hz-btn" onclick="setHz(20, this)"
+        style="flex:1;padding:10px 6px;border-radius:10px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:var(--s2);color:var(--ink2);">20 ans</button>
+    </div>
+  </div>
+
+  <!-- Résultats KPI -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+    <div class="card card-hero" style="text-align:center;padding:16px;grid-column:1/3;">
+      <p style="font-size:9px;letter-spacing:.07em;font-weight:700;opacity:.6;margin-bottom:4px;">VALEUR FINALE</p>
+      <p class="serif" style="font-size:28px;font-weight:700;color:#fff;" id="proj-val">—</p>
+      <p style="font-size:11px;opacity:.6;margin-top:2px;">FCFA dans <span id="proj-years">—</span> an(s)</p>
+    </div>
+    <div class="card" style="text-align:center;padding:14px;background:var(--forest-l);">
+      <p style="font-size:9px;font-weight:700;color:var(--forest);letter-spacing:.06em;margin-bottom:4px;">GAIN VS CASH</p>
+      <p class="serif" style="font-size:14px;font-weight:700;color:var(--forest);" id="proj-gain">—</p>
+    </div>
+    <div class="card" style="text-align:center;padding:14px;">
+      <p style="font-size:9px;font-weight:700;color:var(--indigo);letter-spacing:.06em;margin-bottom:4px;">ROI TOTAL</p>
+      <p class="serif" style="font-size:20px;font-weight:700;color:var(--indigo);" id="proj-roe">—</p>
+    </div>
+  </div>
+
+  <!-- Graphique -->
+  <div class="card" style="margin-bottom:12px;">
+    <p style="font-size:13px;font-weight:700;margin-bottom:10px;">
+      <i class="fa-solid fa-chart-line" style="color:var(--forest);margin-right:6px;"></i>Projection de richesse
+    </p>
+    <div style="height:200px;"><canvas id="c-proj"></canvas></div>
+  </div>
+
+  <!-- Comparatif -->
+  <div class="card" style="margin-bottom:12px;">
+    <p style="font-size:13px;font-weight:700;margin-bottom:12px;">
+      <i class="fa-solid fa-scale-balanced" style="color:var(--sienna);margin-right:6px;"></i>Comparatif produits
+    </p>
+    <div id="compare-table" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+
+  <!-- Info BVMAC -->
+  <div class="card" style="background:var(--indigo-l);border:1px solid rgba(45,63,160,.2);">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--indigo);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fa-solid fa-info" style="color:#fff;font-size:13px;"></i>
+      </div>
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--indigo);margin-bottom:4px;">BVMAC — Bourse d'Afrique Centrale</p>
+        <p style="font-size:11px;color:var(--ink2);line-height:1.6;">
+          Basée à Libreville (Gabon), la BVMAC permet d'investir dans des obligations d'État et d'entreprises CEMAC. Rendements 6-8%/an. Ticket d'entrée dès 100 000 FCFA.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// setProduct: met à jour le taux et met en évidence le bouton sélectionné
+function setProduct(rate, btn) {
+  document.getElementById('s-rate').value = rate;
+  document.querySelectorAll('.prod-btn').forEach(b => {
+    b.style.border = '1px solid var(--border)';
+    b.style.background = '';
+    b.querySelectorAll('p').forEach(p => { p.style.color = ''; });
+  });
+  btn.style.border = '2px solid var(--forest)';
+  btn.style.background = 'var(--forest-l)';
+  calcProj();
+}
+
+// calcProj est défini dans finai.js — on appelle juste la version étendue ici
+// pour le comparatif produits
+const _origCalcProj = calcProj;
+function calcProj() {
+  const cap   = parseFloat(document.getElementById('s-capital')?.value) || 0;
+  const mon   = parseFloat(document.getElementById('s-monthly')?.value) || 0;
+  const rate  = parseFloat(document.getElementById('s-rate')?.value || 6);
+  const years = SIM_YEARS;
+  const mths  = years * 12;
+  const mRate = rate / 12 / 100;
+
+  let wi = cap, co = cap;
+  for (let i = 0; i < mths; i++) { wi = wi*(1+mRate)+mon; co += mon; }
+  wi = Math.round(wi);
+
+  const total_inv = cap + mon * mths;
+  const roe = total_inv > 0 ? Math.round((wi - total_inv) / total_inv * 100) : 0;
+
+  const vEl = document.getElementById('proj-val');
+  const gEl = document.getElementById('proj-gain');
+  const yEl = document.getElementById('proj-years');
+  const rEl = document.getElementById('proj-roe');
+  if (vEl) vEl.textContent = fmt(wi) + ' F';
+  if (gEl) gEl.textContent = '+' + fmt(wi - co) + ' F';
+  if (yEl) yEl.textContent = years;
+  if (rEl) rEl.textContent = roe + ' %';
+
+  // Graphique
+  const canvas = document.getElementById('c-proj');
+  if (!canvas) return;
+  const labArr = [], wiArr = [cap], coArr = [cap];
+  let wa = cap, ca = cap;
+  for (let m = 1; m <= mths; m++) {
+    wa = wa*(1+mRate)+mon; ca += mon;
+    if (m % 12 === 0) { labArr.push('An '+(m/12)); wiArr.push(Math.round(wa)); coArr.push(Math.round(ca)); }
+  }
+  if (SIM_CHART) SIM_CHART.destroy();
+  SIM_CHART = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: labArr,
+      datasets: [
+        { label: 'Avec investissement ('+rate+'%)', data: wiArr, borderColor: '#1e6b48', backgroundColor: 'rgba(30,107,72,.08)', fill: true, tension: .4, pointRadius: 3 },
+        { label: 'Cash pur (0%)', data: coArr, borderColor: '#c4b9a8', backgroundColor: 'rgba(196,185,168,.05)', fill: true, tension: .4, pointRadius: 3, borderDash: [5,5] }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { color: '#94a3c0', font: { size: 10 }, boxWidth: 10, padding: 6 } } },
+      scales: {
+        x: { ticks: { color: '#94a3c0', font: { size: 9 } }, grid: { display: false } },
+        y: { ticks: { color: '#94a3c0', font: { size: 9 }, callback: v => fmt(v)+' F' }, grid: { color: 'rgba(228,234,244,.6)' } }
+      }
+    }
+  });
+
+  // Comparatif
+  const products = [
+    { name: 'Épargne bancaire',    rate: 3,  color: '#2d3fa0' },
+    { name: 'BVMAC Obligations',   rate: 7,  color: '#1e6b48' },
+    { name: 'Immobilier locatif',  rate: 12, color: '#b87020' },
+    { name: 'Business / Commerce', rate: 20, color: '#c45c2a' },
+  ];
+  function projFinal(c, m, r, y) {
+    const mr = r/12/100; let w = c;
+    for (let i = 0; i < y*12; i++) w = w*(1+mr)+m;
+    return Math.round(w);
+  }
+  const maxF = Math.max(...products.map(p => projFinal(cap, mon, p.rate, years)));
+  const el = document.getElementById('compare-table');
+  if (el) el.innerHTML = products.map(p => {
+    const fin = projFinal(cap, mon, p.rate, years);
+    const pct = maxF > 0 ? Math.round(fin/maxF*100) : 0;
+    return `<div style="background:var(--s2);border-radius:10px;padding:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <p style="font-size:11px;font-weight:700;">${p.name} <span style="font-weight:400;color:var(--ink3);">(${p.rate}%)</span></p>
+        <p style="font-size:11px;font-weight:700;color:${p.color};">${fmt(fin)} F</p>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${p.color};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// Hz buttons
+document.querySelectorAll('.hz-btn').forEach(b => b.addEventListener('click', function() {
+  document.querySelectorAll('.hz-btn').forEach(x => { x.style.background='var(--s2)'; x.style.color='var(--ink2)'; });
+  this.style.background = 'var(--ink)'; this.style.color = '#fff';
+}));
+
+// Init
+SIM_YEARS = 1;
+calcProj();
+</script>
+{% endblock %}
